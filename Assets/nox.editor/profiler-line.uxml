@@ -1,0 +1,20 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements"
+             xmlns:editor="UnityEditor.UIElements"
+             noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <engine:VisualElement
+            style="flex-direction: row; align-items: center; padding: 4px; margin: 2px 0; background-color: rgb(50, 50, 50); border-radius: 2px;">
+        <engine:VisualElement name="color-indicator"
+                              style="width: 8px; height: 16px; background-color: rgb(0, 255, 0); border-radius: 2px; margin-right: 8px;"/>
+        <engine:Label name="profiler-name" text="Profiler Name"
+                      style="flex-grow: 1; font-size: 11px; min-width: 120px;"/>
+        <engine:Label name="current-ms" text="0.00ms"
+                      style="min-width: 60px; font-size: 11px; -unity-text-align: middle-right;"/>
+        <engine:Label name="min-ms" text="0.00ms"
+                      style="min-width: 60px; font-size: 11px; -unity-text-align: middle-right; color: rgb(180, 180, 180);"/>
+        <engine:Label name="avg-ms" text="0.00ms"
+                      style="min-width: 60px; font-size: 11px; -unity-text-align: middle-right; color: rgb(180, 180, 180);"/>
+        <engine:Label name="max-ms" text="0.00ms"
+                      style="min-width: 60px; font-size: 11px; -unity-text-align: middle-right; color: rgb(180, 180, 180);"/>
+    </engine:VisualElement>
+</engine:UXML>
+

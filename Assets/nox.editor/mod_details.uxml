@@ -1,0 +1,36 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements"
+             xmlns:editor="UnityEditor.UIElements"
+             noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Nox/ModLoader/Resources/nox.cck.style.uss?fileID=7433441132597879392&amp;guid=b86e17dc57cb40d2a131e93eab25a53d&amp;type=3#nox.cck.style"/>
+    <engine:VisualElement class="parent-container">
+        <engine:VisualElement class="main-container" style="flex-grow: 1;">
+            <engine:ScrollView style="flex-grow: 1;">
+                <engine:GroupBox class="section">
+                    <engine:VisualElement style="flex-direction: row; align-items: center; margin-bottom: 8px;">
+                        <engine:Label text="Mod Details" class="title" style="flex-grow: 1;"/>
+                        <engine:Label name="version" text="v1.0.0" class="subtitle"/>
+                        <engine:Button text="Refresh" name="refresh-button" style="margin-left: 8px;"/>
+                    </engine:VisualElement>
+                    <engine:Label name="mod-count" text="Loading mods..." class="subtitle"/>
+                </engine:GroupBox>
+
+                <engine:VisualElement name="mods-container" class="transition" style="flex-grow: 1; padding: 8px;">
+                    <engine:VisualElement name="mods-list" style="flex-grow: 1;"/>
+                </engine:VisualElement>
+
+                <engine:GroupBox class="m-0 p-0 border-top border">
+                    <engine:Foldout text="Advanced Options" value="false" class="section">
+                        <engine:Label
+                                text="Detailed information about loaded mods and their status. Use this panel to monitor mod performance and troubleshoot issues."
+                                class="subtitle"/>
+                        <engine:VisualElement style="flex-direction: row; margin-top: 8px;">
+                            <engine:Toggle name="auto-refresh" text="Auto-refresh" style="margin-right: 16px;"/>
+                            <engine:Toggle name="show-disabled" text="Show disabled mods"/>
+                        </engine:VisualElement>
+                    </engine:Foldout>
+                </engine:GroupBox>
+            </engine:ScrollView>
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>
+

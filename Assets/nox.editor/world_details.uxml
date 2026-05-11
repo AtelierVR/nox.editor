@@ -1,0 +1,26 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements"
+             xmlns:editor="UnityEditor.UIElements"
+             noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Mods/api.nox.world/assets/Style.uss?fileID=7433441132597879392&amp;guid=e5801f130c21d4a43937749c0d48a9cd&amp;type=3#Style"/>
+    <engine:VisualElement style="flex-grow: 1; padding-top: 4px; padding-bottom: 4px;">
+        <engine:GroupBox
+                style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;">
+            <engine:VisualElement
+                    style="flex-grow: 1; border-left-color: rgb(47, 47, 47); border-right-color: rgb(47, 47, 47); border-top-color: rgb(47, 47, 47); border-bottom-color: rgb(47, 47, 47); border-bottom-width: 1px; padding-bottom: 4px; padding-top: 4px; flex-direction: row; padding-right: 8px; padding-left: 8px;">
+                <engine:Label text="World Details" style="margin-right: 3px; margin-left: 3px; flex-grow: 1;"/>
+                <engine:Label text="v0.0.0" name="version"/>
+            </engine:VisualElement>
+        </engine:GroupBox>
+        <engine:GroupBox name="building"
+                         style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-grow: 0; flex-shrink: 1;">
+            <engine:VisualElement
+                    style="flex-grow: 0; flex-direction: row; border-left-color: rgb(47, 47, 47); border-right-color: rgb(47, 47, 47); border-top-color: rgb(47, 47, 47); border-bottom-color: rgb(47, 47, 47); padding-top: 4px; padding-bottom: 4px; border-top-width: 0; padding-right: 8px; padding-left: 8px; border-bottom-width: 1px;">
+                <engine:VisualElement style="flex-grow: 1; align-self: stretch;"/>
+                <engine:Button text="Clear" name="clear" class="disable-on-error"/>
+            </engine:VisualElement>
+        </engine:GroupBox>
+        <engine:ScrollView style="flex-grow: 1;">
+            <engine:VisualElement name="logs" style="flex-grow: 1; flex-direction: column-reverse;"/>
+        </engine:ScrollView>
+    </engine:VisualElement>
+</engine:UXML>

@@ -1,0 +1,25 @@
+{
+  "type": "mod",
+  "id": "nox.editor",
+  "provides": [
+    "editor"
+  ],
+  "name": "Nox Editor",
+  "version": "1.0.0",
+  "description": "Editor utilities and development tools for Nox.",
+  "license": "GPL-3.0",
+  "icon": null,
+  "contact": {
+    "email": "hactazia@gmail.com",
+    "source": "https://github.com/AtelierVR/nox.editor",
+    "website": "https://nox.hactazia.fr/",
+    "issues": "https://github.com/AtelierVR/nox.editor/issues"
+  },
+  "authors": [
+    {
+      "name": "Hactazia",
+      "email": "hactazia@gmail.com",
+      "website": "https://hactazia.fr/"
+    }
+  ]
+}

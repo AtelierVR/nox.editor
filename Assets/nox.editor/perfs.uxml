@@ -1,0 +1,54 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Nox/ModLoader/Resources/nox.cck.style.uss?fileID=7433441132597879392&amp;guid=b86e17dc57cb40d2a131e93eab25a53d&amp;type=3#nox.cck.style" />
+    <engine:VisualElement class="parent-container">
+        <engine:VisualElement class="main-container" style="flex-grow: 1;">
+            <engine:ScrollView style="flex-grow: 1;">
+                <engine:GroupBox class="section">
+                    <engine:VisualElement style="flex-direction: row; align-items: center; margin-bottom: 8px;">
+                        <engine:Label text="Performance Monitor" class="title" style="flex-grow: 1;" />
+                        <engine:Label name="version" text="v1.0.0" class="subtitle" />
+                        <engine:Button text="Clear Data" name="clear-button" style="margin-left: 8px;" />
+                    </engine:VisualElement>
+                    <engine:Label text="Real-time performance monitoring for the editor and loaded mods." class="subtitle" />
+                </engine:GroupBox>
+                
+                <engine:GroupBox class="section">
+                    <engine:Label text="System Performance" class="title" />
+                    <engine:VisualElement style="flex-direction: row; margin-bottom: 8px;">
+                        <engine:Label name="fps-label" text="FPS: --" style="flex-grow: 1;" />
+                        <engine:Label name="memory-label" text="Memory: --" style="flex-grow: 1;" />
+                        <engine:Label name="draw-calls-label" text="Draw Calls: --" style="flex-grow: 1;" />
+                    </engine:VisualElement>
+                </engine:GroupBox>
+                
+                <engine:GroupBox class="m-0 p-0 border-top border">
+                    <engine:Foldout text="System Performance Graph" value="false" name="system-graph-foldout" class="section transition">
+                        <engine:VisualElement name="system-graph" style="height: 200px; background-color: rgb(42, 42, 42); border-radius: 4px; margin: 8px;" />
+                    </engine:Foldout>
+                </engine:GroupBox>
+                
+                <engine:GroupBox class="m-0 p-0 border-top border">
+                    <engine:Foldout text="Mod Performance" value="true" name="mods-foldout" class="section transition">
+                        <engine:Label text="Performance metrics for individual mods. Expand each mod to see detailed profiling data." class="subtitle" />
+                        <engine:VisualElement name="mods-container" style="margin-top: 8px;" />
+                    </engine:Foldout>
+                </engine:GroupBox>
+                
+                <engine:GroupBox class="m-0 p-0 border-top border">
+                    <engine:Foldout text="Advanced Options" value="false" class="section">
+                        <engine:Label text="Configure performance monitoring settings and data collection options." class="subtitle" />
+                        <engine:VisualElement style="flex-direction: row; margin-top: 8px;">
+                            <engine:Toggle name="auto-update" text="Auto-update graphs" value="true" style="margin-right: 16px;" />
+                            <engine:Toggle name="show-detailed" text="Show detailed metrics" value="true" />
+                        </engine:VisualElement>
+                        <engine:VisualElement style="flex-direction: row; margin-top: 8px;">
+                            <engine:SliderInt name="update-rate" label="Update Rate (ms)" low-value="100" high-value="2000" value="500" style="flex-grow: 1; margin-right: 16px;" />
+                            <engine:Button text="Export Data" name="export-button" />
+                        </engine:VisualElement>
+                    </engine:Foldout>
+                </engine:GroupBox>
+            </engine:ScrollView>
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>
+

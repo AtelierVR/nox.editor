@@ -1,0 +1,17 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Mods/api.nox.world/assets/Style.uss?fileID=7433441132597879392&amp;guid=e5801f130c21d4a43937749c0d48a9cd&amp;type=3#Style" />
+    <engine:Foldout text="..." value="false" style="background-color: rgb(56, 56, 56); border-radius: 4px; padding-top: 8px; padding-right: 8px; padding-bottom: 8px; padding-left: 8px; margin-top: 8px;">
+        <engine:VisualElement name="mod-graph" style="height: 200px; margin: 5px; flex-grow: 1; border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-right-radius: 4px; border-bottom-left-radius: 4px; background-color: rgb(38, 38, 38); margin-top: 8px; margin-right: 0; margin-bottom: 0; margin-left: 0; overflow: hidden;" />
+        <engine:VisualElement style="flex-direction: row; align-items: center; margin-top: 8px; margin-bottom: 4px;">
+            <engine:VisualElement name="color" style="width: 12px; height: 12px; background-color: rgb(38, 38, 38); border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-right-radius: 4px; border-bottom-left-radius: 4px;" />
+            <engine:Label text="Name" name="name" style="min-width: 150px; padding-left: 4px;" />
+            <engine:Label text="Current Ms" name="crt-ms" style="flex-grow: 1;" />
+            <engine:VisualElement style="flex-direction: row;">
+                <engine:Label text="Min" name="min-ms" style="min-width: 50px; -unity-text-align: upper-right;" />
+                <engine:Label text="Avg." name="avg-ms" style="min-width: 50px; -unity-text-align: upper-right;" />
+                <engine:Label text="Max" name="max-ms" style="min-width: 50px; -unity-text-align: upper-right;" />
+            </engine:VisualElement>
+        </engine:VisualElement>
+        <engine:VisualElement name="data" style="flex-grow: 1; border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-right-radius: 4px; border-bottom-left-radius: 4px;" />
+    </engine:Foldout>
+</engine:UXML>

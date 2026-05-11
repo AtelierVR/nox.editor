@@ -1,0 +1,27 @@
+{
+    "name": "Nox.Editor",
+    "rootNamespace": "Nox.Editor",
+    "references": [
+        "UniTask",
+        "Nox.CCK",
+        "Nox.ModLoader",
+        "Nox.Avatars",
+        "Nox.Controllers",
+        "Nox.Controllers.Runtime",
+        "api.nox.session",
+        "api.nox.relay",
+        "api.nox.network",
+        "api.nox.xr"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
