@@ -41,10 +41,8 @@ namespace Nox.Editor
         public override VisualElement CreatePanelContent()
         {
             var root = new VisualElement();
-            root.style.paddingLeft = 4;
-            root.style.paddingRight = 4;
-            root.style.paddingTop = 4;
-            root.style.paddingBottom = 4;
+            root.styleSheets.Add(AssetDatabase.LoadAssetAtPath<StyleSheet>("Packages/nox.editor/Assets/nox.editor/panels.uss"));
+            root.AddToClassList("p-4");
 
             var toggle = new Toggle("Follow Controller") { value = _active };
             toggle.RegisterValueChangedCallback(evt => SetFollowing(evt.newValue));

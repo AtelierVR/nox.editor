@@ -1,18 +1,20 @@
-<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <engine:VisualElement class="unity-text-field__input" style="flex-grow: 0; padding: 8px; margin: 4px 2px; background-color: rgb(39, 39, 39); border-radius: 4px;">
-        <engine:Foldout name="mod-foldout" text="Mod Name" value="false" style="margin: 0;">
-            <engine:VisualElement name="mod-content" style="margin: 8px 0;">
-                <engine:VisualElement name="metrics-summary" style="flex-direction: row; margin-bottom: 8px;">
-                    <engine:Label name="total-time" text="Total: 0.00ms" style="flex-grow: 1; font-size: 12px;" />
-                    <engine:Label name="avg-time" text="Avg: 0.00ms" style="flex-grow: 1; font-size: 12px;" />
-                    <engine:Label name="peak-time" text="Peak: 0.00ms" style="flex-grow: 1; font-size: 12px;" />
-                </engine:VisualElement>
-                
-                <engine:VisualElement name="performance-graph" style="height: 120px; background-color: rgb(42, 42, 42); border-radius: 4px; margin-bottom: 8px;" />
-                
-                <engine:VisualElement name="profilers-list" style="margin-top: 8px;" />
-            </engine:VisualElement>
-        </engine:Foldout>
-    </engine:VisualElement>
-</engine:UXML>
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Packages/nox.cck/Resources/nox.style.uss?fileID=7433441132597879392&amp;guid=956d93e835714844b98277f4fdbd77d3&amp;type=3#nox.style" />
+    <Style src="project://database/Packages/nox.editor/Assets/nox.editor/panels.uss?fileID=7433441132597879392&amp;guid=714eb72dda480a944a65e84bce8547a4&amp;type=3#panels" />
+    <ui:GroupBox class="m-0 border-b p-8">
+        <ui:Foldout name="mod-foldout" text="Mod Name" value="false">
+            <ui:VisualElement name="mod-content">
+                <ui:VisualElement style="flex-direction: row;" class="mb-8">
+                    <ui:Label name="total-time" text="Total: 0.00ms" class="text-sm flex-grow" />
+                    <ui:Label name="avg-time"   text="Avg: 0.00ms"   class="text-sm flex-grow" />
+                    <ui:Label name="peak-time"  text="Peak: 0.00ms"  class="text-sm flex-grow" />
+                </ui:VisualElement>
+                <ui:VisualElement name="performance-graph" class="graph-container-sm">
+                    <ui:Image name="graph-image" style="width: 100%; height: 100%;" />
+                </ui:VisualElement>
+                <ui:VisualElement name="profilers-list" class="mt-4" />
+            </ui:VisualElement>
+        </ui:Foldout>
+    </ui:GroupBox>
+</ui:UXML>
 

@@ -2,200 +2,159 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Cysharp.Threading.Tasks;
 using Nox.CCK.Mods;
 using Nox.CCK.Mods.Cores;
 using Nox.CCK.Mods.Events;
 using Nox.CCK.Mods.Initializers;
-using Nox.CCK.Mods.Panels;
+using Nox.Editor.Panel;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Profiling;
 using UnityEngine.UIElements;
-using Logger = Nox.CCK.Utils.Logger;
 
 namespace Nox.Editor {
-	public class Performances : IEditorModInitializer {
-		internal static IEditorModCoreAPI    CoreAPI;
-		private         IEditorPanel         _buildPanel;
-		private         EventSubscription[] _events = Array.Empty<EventSubscription>();
-		private         PerformancePanel    _panel;
+	public class Performances : IEditorModInitializer, Nox.Editor.Panel.IPanel {
+		internal IEditorModCoreAPI API;
+		private EventSubscription[] _events = Array.Empty<EventSubscription>();
 
 		internal static UnityEvent<IMod> ModLoadedEvent   = new();
 		internal static UnityEvent<IMod> ModUnloadedEvent = new();
 
 		public void OnInitializeEditor(IEditorModCoreAPI api) {
-			CoreAPI = api;
-
+			API = api;
 			_events = new[] {
-				api.EventAPI.Subscribe("mod_loaded", ctx => OnModLoaded(ctx.TryGet(0, out IMod m) ? m : null)),
-				api.EventAPI.Subscribe("mod_unloaded", ctx => OnModUnloaded(ctx.TryGet(0, out IMod m) ? m : null)),
+				api.EventAPI.Subscribe("mod_loaded",   ctx => { if (ctx.TryGet(0, out IMod m)) ModLoadedEvent.Invoke(m); }),
+				api.EventAPI.Subscribe("mod_unloaded", ctx => { if (ctx.TryGet(0, out IMod m)) ModUnloadedEvent.Invoke(m); }),
 			};
-
 			foreach (var m in api.ModAPI.GetMods())
-				OnModLoaded(m);
-
-			_panel      = new PerformancePanel();
-			_buildPanel = api.PanelAPI.AddLocalPanel(_panel);
+				ModLoadedEvent.Invoke(m);
 		}
 
 		public void OnDisposeEditor() {
-			CoreAPI.PanelAPI.RemoveLocalPanel(_buildPanel);
-			foreach (var subscription in _events)
-				CoreAPI.EventAPI.Unsubscribe(subscription);
+			foreach (var s in _events) API?.EventAPI.Unsubscribe(s);
 			_events = Array.Empty<EventSubscription>();
-			_panel?.OnHidden();
-			CoreAPI = null;
+			Instance?.OnDestroy();
+			API = null;
 		}
 
-		private void OnModLoaded(IMod mod) {
-			if (mod == null) return;
-			ModLoadedEvent.Invoke(mod);
+		public string[] GetPath()  => new[] { "editor", "performances" };
+		public string   GetLabel() => "Editor/Performances";
+
+		internal PerformancesInstance Instance;
+
+		public IInstance[] GetInstances()
+			=> Instance != null ? new IInstance[] { Instance } : Array.Empty<IInstance>();
+
+		public IInstance Instantiate(IWindow window, Dictionary<string, object> data) {
+			if (Instance != null)
+				throw new InvalidOperationException($"{nameof(Performances)} only supports a single instance.");
+			return Instance = new PerformancesInstance(this, window);
 		}
 
-		private void OnModUnloaded(IMod mod) {
-			if (mod == null) return;
-			ModUnloadedEvent.Invoke(mod);
-		}
+		public void OnUpdateEditor() => Instance?.Update();
 
-		public void OnUpdateEditor() {
-			_panel?.Update();
-		}
 	}
 
-	public class PerformancePanel : IEditorPanelBuilder {
-		public string GetId()
-			=> "performances";
+	public class PerformancesInstance : IInstance {
+		private readonly Performances _panel;
+		private readonly IWindow      _window;
+		private          VisualElement _content;
+		private          SystemPerformanceMonitor _systemMonitor;
+		private readonly Dictionary<string, ModPerformanceMonitor> _modMonitors = new();
+		private          bool _autoUpdate  = true;
+		private          bool _showDetailed = true;
+		private          int  _updateRate   = 500;
 
-		public string GetName()
-			=> "Dev/Performances";
-
-		public bool IsHidden()
-			=> false;
-
-		private readonly VisualElement _root = new();
-		private SystemPerformanceMonitor _systemMonitor;
-		private Dictionary<string, ModPerformanceMonitor> _modMonitors = new();
-		private bool _autoUpdate = true;
-		private bool _showDetailed = true;
-		private int _updateRate = 500;
-
-		private class ModPerformanceUserData {
+		private class ModPerfUserData {
 			internal readonly string ModId;
-			internal DateTime LastModified { get; set; } = DateTime.MinValue;
-
-			internal ModPerformanceUserData(string modId) {
-				ModId = modId;
-			}
-
-			public bool Equals(string modId) => ModId == modId;
-			public override string ToString() => ModId;
+			internal ModPerfUserData(string id) => ModId = id;
+			public bool Equals(string id) => ModId == id;
 		}
 
-		public VisualElement Make(Dictionary<string, object> data) {
-			_root.ClearBindings();
-			_root.Clear();
-			
-			// Load the main UXML template
-			_root.Add(Performances.CoreAPI.AssetAPI.GetAsset<VisualTreeAsset>("perfs.uxml").CloneTree());
-			
-			// Set version
-			_root.Q<Label>("version").text = "v" + Performances.CoreAPI.ModMetadata.GetVersion();
-			
-			// Setup event handlers
-			SetupEventHandlers();
-			
-			// Initialize system monitor
-			_systemMonitor = new SystemPerformanceMonitor(_root);
-			
-			// Initialize mod monitors
-			foreach (var mod in Performances.CoreAPI.ModAPI.GetMods()) {
-				OnModAdded(mod);
-			}
-			
-			// Setup event listeners
+		public PerformancesInstance(Performances panel, IWindow window) {
+			_panel  = panel;
+			_window = window;
+		}
+
+		public Nox.Editor.Panel.IPanel  GetPanel()  => _panel;
+		public IWindow GetWindow() => _window;
+		public string  GetTitle()  => "Performances";
+
+		public void OnDestroy() {
+			OnHidden();
+			_panel.Instance = null;
+		}
+
+		public IToolOption[] GetOptions()
+			=> new IToolOption[] {
+				new DefaultToolOption("Clear", ClearAllData),
+				new DefaultToolOption("Export", ExportPerformanceData),
+			};
+
+		public VisualElement GetContent() {
+			if (_content != null) return _content;
+
+			_content = _panel.API.AssetAPI.GetAsset<VisualTreeAsset>("perfs.uxml").CloneTree();
+			_content.AddToClassList("flex-fill");
+
+			var autoUpdate = _content.Q<Toggle>("auto-update");
+			autoUpdate.SetValueWithoutNotify(_autoUpdate);
+			autoUpdate.RegisterCallback<ChangeEvent<bool>>(e => _autoUpdate = e.newValue);
+
+			var showDetailed = _content.Q<Toggle>("show-detailed");
+			showDetailed.SetValueWithoutNotify(_showDetailed);
+			showDetailed.RegisterCallback<ChangeEvent<bool>>(e => { _showDetailed = e.newValue; UpdateDetailedVisibility(); });
+
+			var updateRate = _content.Q<SliderInt>("update-rate");
+			updateRate.SetValueWithoutNotify(_updateRate);
+			updateRate.RegisterCallback<ChangeEvent<int>>(e => _updateRate = e.newValue);
+
+			_systemMonitor = new SystemPerformanceMonitor(_content);
+
+			foreach (var mod in _panel.API.ModAPI.GetMods()) OnModAdded(mod);
+
 			Performances.ModLoadedEvent.AddListener(OnModAdded);
 			Performances.ModUnloadedEvent.AddListener(OnModRemoved);
-			
-			return _root;
-		}
 
-		private void SetupEventHandlers() {
-			_root.Q<Button>("clear-button").clicked += ClearAllData;
-			
-			var autoUpdateToggle = _root.Q<Toggle>("auto-update");
-			autoUpdateToggle.value = _autoUpdate;
-			autoUpdateToggle.RegisterValueChangedCallback(evt => _autoUpdate = evt.newValue);
-			
-			var showDetailedToggle = _root.Q<Toggle>("show-detailed");
-			showDetailedToggle.value = _showDetailed;
-			showDetailedToggle.RegisterValueChangedCallback(evt => {
-				_showDetailed = evt.newValue;
-				UpdateDetailedVisibility();
-			});
-			
-			var updateRateSlider = _root.Q<SliderInt>("update-rate");
-			updateRateSlider.value = _updateRate;
-			updateRateSlider.RegisterValueChangedCallback(evt => _updateRate = evt.newValue);
-			
-			_root.Q<Button>("export-button").clicked += ExportPerformanceData;
+			return _content;
 		}
-
-		private VisualElement GetModElement(string modId) =>
-			_root.Q<VisualElement>("mods-container")
-				?.Children()
-				.FirstOrDefault(c => c.userData is ModPerformanceUserData data && data.Equals(modId));
 
 		public void Update() {
 			if (!_autoUpdate) return;
-			
 			_systemMonitor?.Update();
-			
-			foreach (var monitor in _modMonitors.Values) {
-				monitor?.Update();
-			}
+			foreach (var monitor in _modMonitors.Values) monitor?.Update();
 		}
 
-		private void OnModAdded(IMod mod) {
-			if (mod == null) return;
-			
-			var modId = mod.GetMetadata().GetId();
-			var container = _root.Q<VisualElement>("mods-container");
-			if (container == null) return;
-			
-			var child = GetModElement(modId);
-			if (child != null) {
-				// Update existing
-				if (_modMonitors.TryGetValue(modId, out var existingMonitor)) {
-					existingMonitor.UpdateMod(mod);
-				}
-				return;
-			}
+		private VisualElement GetModElement(string modId)
+			=> _content?.Q<VisualElement>("mods-container")
+				?.Children()
+				.FirstOrDefault(c => c.userData is ModPerfUserData d && d.Equals(modId));
 
-			var modItemTemplate = Performances.CoreAPI.AssetAPI.GetAsset<VisualTreeAsset>("mod-perf-item.uxml");
-			child = modItemTemplate.CloneTree();
-			
-			var userData = new ModPerformanceUserData(modId);
-			child.userData = userData;
-			
-			var monitor = new ModPerformanceMonitor(mod, child);
+		private void OnModAdded(IMod mod) {
+			if (mod == null || _content == null) return;
+			var modId     = mod.GetMetadata().GetId();
+			var container = _content.Q<VisualElement>("mods-container");
+			if (container == null) return;
+
+			var child = GetModElement(modId);
+			if (child != null) { _modMonitors.TryGetValue(modId, out var ex); ex?.UpdateMod(mod); return; }
+
+			child          = _panel.API.AssetAPI.GetAsset<VisualTreeAsset>("mod-perf-item.uxml").CloneTree();
+			child.userData = new ModPerfUserData(modId);
+			var monitor    = new ModPerformanceMonitor(mod, child, _panel.API);
 			_modMonitors[modId] = monitor;
-			
 			container.Add(child);
-			userData.LastModified = DateTime.Now;
 		}
 
 		private void OnModRemoved(IMod mod) {
 			if (mod == null) return;
-			
 			var modId = mod.GetMetadata().GetId();
 			var child = GetModElement(modId);
 			if (child != null) {
-				_root.Q<VisualElement>("mods-container")?.Remove(child);
+				_content?.Q<VisualElement>("mods-container")?.Remove(child);
 				child.RemoveFromHierarchy();
 			}
-			
 			if (_modMonitors.TryGetValue(modId, out var monitor)) {
 				monitor.Dispose();
 				_modMonitors.Remove(modId);
@@ -204,32 +163,23 @@ namespace Nox.Editor {
 
 		private void ClearAllData() {
 			_systemMonitor?.ClearData();
-			foreach (var monitor in _modMonitors.Values) {
-				monitor?.ClearData();
-			}
+			foreach (var m in _modMonitors.Values) m?.ClearData();
 		}
 
 		private void UpdateDetailedVisibility() {
-			foreach (var monitor in _modMonitors.Values) {
-				monitor?.SetDetailedVisibility(_showDetailed);
-			}
+			foreach (var m in _modMonitors.Values) m?.SetDetailedVisibility(_showDetailed);
 		}
 
 		private void ExportPerformanceData() {
 			var path = EditorUtility.SaveFilePanel("Export Performance Data", "", "performance_data", "json");
 			if (string.IsNullOrEmpty(path)) return;
-			
-			// Implementation for exporting data
 			EditorUtility.DisplayDialog("Export", "Performance data exported successfully!", "Ok");
 		}
 
-		public void OnHidden() {
+		private void OnHidden() {
 			Performances.ModLoadedEvent.RemoveListener(OnModAdded);
 			Performances.ModUnloadedEvent.RemoveListener(OnModRemoved);
-			
-			foreach (var monitor in _modMonitors.Values) {
-				monitor?.Dispose();
-			}
+			foreach (var m in _modMonitors.Values) m?.Dispose();
 			_modMonitors.Clear();
 			_systemMonitor?.Dispose();
 			_systemMonitor = null;
@@ -269,30 +219,15 @@ namespace Nox.Editor {
 
 		private void InitializeGraph() {
 			if (_graphContainer == null) return;
-			
-			_graphContainer.Clear();
-			
-			var containerWidth = Mathf.Max(1, (int)_graphContainer.layout.width);
-			var containerHeight = Mathf.Max(1, (int)_graphContainer.layout.height);
-			
-			if (containerWidth <= 1 || containerHeight <= 1) {
-				containerWidth = 512;
-				containerHeight = 200;
-			}
-			
-			_graphTexture = new Texture2D(containerWidth, containerHeight, TextureFormat.RGBA32, false) {
+
+			var w = Mathf.Max(512, (int)_graphContainer.layout.width);
+			var h = Mathf.Max(200, (int)_graphContainer.layout.height);
+
+			_graphTexture = new Texture2D(w, h, TextureFormat.RGBA32, false) {
 				filterMode = FilterMode.Point
 			};
-			
-			_graphImage = new Image {
-				image = _graphTexture,
-				style = {
-					width = new StyleLength(Length.Percent(100)),
-					height = new StyleLength(Length.Percent(100))
-				}
-			};
-			
-			_graphContainer.Add(_graphImage);
+			_graphImage       = _graphContainer.Q<Image>("graph-image");
+			if (_graphImage != null) _graphImage.image = _graphTexture;
 			PerformanceMonitor.Fill(_graphTexture);
 		}
 
@@ -390,7 +325,7 @@ namespace Nox.Editor {
 	}
 
 	public class ModPerformanceMonitor {
-		private readonly IMod _mod;
+		private IMod _mod;
 		private readonly VisualElement _container;
 		private readonly Foldout _foldout;
 		private readonly VisualElement _content;
@@ -399,57 +334,44 @@ namespace Nox.Editor {
 		private readonly Label _totalTimeLabel;
 		private readonly Label _avgTimeLabel;
 		private readonly Label _peakTimeLabel;
-		
-		private Image _graphImage;
+		private readonly IEditorModCoreAPI _api;
+
+		private Image     _graphImage;
 		private Texture2D _graphTexture;
-		
+
 		private DateTime _lastUpdate = DateTime.MinValue;
 		private readonly Dictionary<string, ProfilerLineMonitor> _profilerMonitors = new();
 		private readonly Dictionary<string, List<(float, float, float)>> _profilerHistory = new();
-		
+
 		private const float UpdateInterval = 0.2f;
 
-		public ModPerformanceMonitor(IMod mod, VisualElement container) {
-			_mod = mod;
-			_container = container;
-			_foldout = container.Q<Foldout>("mod-foldout");
-			_content = container.Q<VisualElement>("mod-content");
+		public ModPerformanceMonitor(IMod mod, VisualElement container, IEditorModCoreAPI api) {
+			_mod            = mod;
+			_container      = container;
+			_api            = api;
+			_foldout        = container.Q<Foldout>("mod-foldout");
+			_content        = container.Q<VisualElement>("mod-content");
 			_graphContainer = container.Q<VisualElement>("performance-graph");
-			_profilersList = container.Q<VisualElement>("profilers-list");
+			_profilersList  = container.Q<VisualElement>("profilers-list");
 			_totalTimeLabel = container.Q<Label>("total-time");
-			_avgTimeLabel = container.Q<Label>("avg-time");
-			_peakTimeLabel = container.Q<Label>("peak-time");
-			
+			_avgTimeLabel   = container.Q<Label>("avg-time");
+			_peakTimeLabel  = container.Q<Label>("peak-time");
+
 			InitializeGraph();
 			UpdateModInfo();
 		}
 
 		private void InitializeGraph() {
 			if (_graphContainer == null) return;
-			
-			_graphContainer.Clear();
-			
-			var containerWidth = Mathf.Max(1, (int)_graphContainer.layout.width);
-			var containerHeight = Mathf.Max(1, (int)_graphContainer.layout.height);
-			
-			if (containerWidth <= 1 || containerHeight <= 1) {
-				containerWidth = 400;
-				containerHeight = 120;
-			}
-			
-			_graphTexture = new Texture2D(containerWidth, containerHeight, TextureFormat.RGBA32, false) {
+
+			var w = Mathf.Max(400, (int)_graphContainer.layout.width);
+			var h = Mathf.Max(120, (int)_graphContainer.layout.height);
+
+			_graphTexture = new Texture2D(w, h, TextureFormat.RGBA32, false) {
 				filterMode = FilterMode.Point
 			};
-			
-			_graphImage = new Image {
-				image = _graphTexture,
-				style = {
-					width = new StyleLength(Length.Percent(100)),
-					height = new StyleLength(Length.Percent(100))
-				}
-			};
-			
-			_graphContainer.Add(_graphImage);
+			_graphImage       = _graphContainer.Q<Image>("graph-image");
+			if (_graphImage != null) _graphImage.image = _graphTexture;
 			PerformanceMonitor.Fill(_graphTexture);
 		}
 
@@ -482,48 +404,35 @@ namespace Nox.Editor {
 		}
 
 		private void UpdateProfilers(Profile[] profilers) {
-			// Remove old profilers
 			var currentNames = profilers.Select(p => p.GetName()).ToHashSet();
-			var toRemove = _profilerMonitors.Keys.Where(k => !currentNames.Contains(k)).ToList();
-			
+			var toRemove     = _profilerMonitors.Keys.Where(k => !currentNames.Contains(k)).ToList();
 			foreach (var name in toRemove) {
-				if (_profilerMonitors.TryGetValue(name, out var monitor)) {
-					monitor.Dispose();
-					_profilerMonitors.Remove(name);
-				}
+				if (_profilerMonitors.TryGetValue(name, out var mon)) { mon.Dispose(); _profilerMonitors.Remove(name); }
 				_profilerHistory.Remove(name);
 			}
-			
-			// Update or add profilers
+
 			for (int i = 0; i < profilers.Length; i++) {
 				var profiler = profilers[i];
-				var name = profiler.GetName();
+				var name     = profiler.GetName();
 				var duration = (float)profiler.Duration.TotalMilliseconds;
-				
+
 				if (!_profilerMonitors.TryGetValue(name, out var monitor)) {
-					var template = Performances.CoreAPI.AssetAPI.GetAsset<VisualTreeAsset>("profiler-line.uxml");
-					var element = template.CloneTree();
+					var element = _api.AssetAPI.GetAsset<VisualTreeAsset>("profiler-line.uxml").CloneTree();
 					_profilersList.Add(element);
-					
-					monitor = new ProfilerLineMonitor(name, element, i, profilers.Length);
+					monitor = new ProfilerLineMonitor(name, element, i);
 					_profilerMonitors[name] = monitor;
-					_profilerHistory[name] = new List<(float, float, float)>();
+					_profilerHistory[name]  = new List<(float, float, float)>();
 				}
-				
+
 				monitor.UpdateCurrent(duration);
-				monitor.UpdateColor(i, profilers.Length);
-				
-				// Update history
+				monitor.UpdateColor(i);
+
 				if (!_profilerHistory.TryGetValue(name, out var history)) {
 					history = new List<(float, float, float)>();
 					_profilerHistory[name] = history;
 				}
-				
-				// For simplicity, use current value as min/avg/max for this frame
 				history.Add((duration, duration, duration));
 				if (history.Count > 100) history.RemoveAt(0);
-				
-				// Update stats
 				if (history.Count > 0) {
 					monitor.UpdateMin(history.Min(x => x.Item1));
 					monitor.UpdateAvg(history.Average(x => x.Item2));
@@ -569,9 +478,7 @@ namespace Nox.Editor {
 		}
 
 		public void SetDetailedVisibility(bool visible) {
-			if (_content != null) {
-				_content.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
-			}
+			_content?.EnableInClassList("hidden", !visible);
 		}
 
 		public void ClearData() {
@@ -602,7 +509,6 @@ namespace Nox.Editor {
 	}
 
 	public class ProfilerLineMonitor {
-		private readonly string _name;
 		private readonly VisualElement _element;
 		private readonly VisualElement _colorIndicator;
 		private readonly Label _nameLabel;
@@ -610,26 +516,28 @@ namespace Nox.Editor {
 		private readonly Label _minLabel;
 		private readonly Label _avgLabel;
 		private readonly Label _maxLabel;
+		private          int   _lastColorIndex = -1;
 
-		public ProfilerLineMonitor(string name, VisualElement element, int colorIndex, int totalColors) {
-			_name = name;
-			_element = element;
+		public ProfilerLineMonitor(string name, VisualElement element, int colorIndex) {
+			_element        = element;
 			_colorIndicator = element.Q<VisualElement>("color-indicator");
-			_nameLabel = element.Q<Label>("profiler-name");
-			_currentLabel = element.Q<Label>("current-ms");
-			_minLabel = element.Q<Label>("min-ms");
-			_avgLabel = element.Q<Label>("avg-ms");
-			_maxLabel = element.Q<Label>("max-ms");
-			
+			_nameLabel      = element.Q<Label>("profiler-name");
+			_currentLabel   = element.Q<Label>("current-ms");
+			_minLabel       = element.Q<Label>("min-ms");
+			_avgLabel       = element.Q<Label>("avg-ms");
+			_maxLabel       = element.Q<Label>("max-ms");
+
 			if (_nameLabel != null) _nameLabel.text = name;
-			UpdateColor(colorIndex, totalColors);
+			UpdateColor(colorIndex);
 		}
 
-		public void UpdateColor(int index, int total) {
-			if (_colorIndicator != null) {
-				var color = PerformanceMonitor.HSLToRGB(index / (float)total * 360f, 0.7f, 0.5f);
-				_colorIndicator.style.backgroundColor = new StyleColor(color);
-			}
+		public void UpdateColor(int index) {
+			if (_colorIndicator == null) return;
+			var idx = index % 12;
+			if (idx == _lastColorIndex) return;
+			if (_lastColorIndex >= 0) _colorIndicator.RemoveFromClassList($"profiler-color-{_lastColorIndex}");
+			_colorIndicator.AddToClassList($"profiler-color-{idx}");
+			_lastColorIndex = idx;
 		}
 
 		public void UpdateCurrent(float value) {

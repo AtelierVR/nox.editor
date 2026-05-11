@@ -5,6 +5,8 @@
         "UniTask",
         "Nox.CCK",
         "Nox.ModLoader",
+        "Nox.Editor.Panel",
+        "Nox.Editor.Panel.Runtime",
         "Nox.Avatars",
         "Nox.Controllers",
         "Nox.Controllers.Runtime",

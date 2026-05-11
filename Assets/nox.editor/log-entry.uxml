@@ -1,0 +1,13 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Packages/nox.cck/Resources/nox.style.uss?fileID=7433441132597879392&amp;guid=956d93e835714844b98277f4fdbd77d3&amp;type=3#nox.style" />
+    <ui:GroupBox class="m-0 border-b p-8">
+        <ui:Foldout name="entry-foldout" text="" value="false">
+            <ui:VisualElement class="p-4">
+                <ui:Label name="source-mod"     text="" class="text-sm mb-4" />
+                <ui:Label name="source-channel" text="" class="text-sm mb-4" />
+                <ui:Label name="data-count"     text="" class="text-xs opacity-75" />
+                <ui:VisualElement name="data-list" class="mt-4" />
+            </ui:VisualElement>
+        </ui:Foldout>
+    </ui:GroupBox>
+</ui:UXML>

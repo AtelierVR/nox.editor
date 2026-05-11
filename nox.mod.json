@@ -9,6 +9,13 @@
   "description": "Editor utilities and development tools for Nox.",
   "license": "GPL-3.0",
   "icon": null,
+  "entrypoints": {
+    "editor": [
+      "Nox.Editor.EventLogger",
+      "Nox.Editor.Performances",
+      "Nox.Editor.ModDetails"
+    ]
+  },
   "contact": {
     "email": "hactazia@gmail.com",
     "source": "https://github.com/AtelierVR/nox.editor",

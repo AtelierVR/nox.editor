@@ -1,53 +1,95 @@
-<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <engine:VisualElement class="unity-text-field__input" style="flex-grow: 0; padding: 8px; margin: 4px 2px; background-color: rgb(39, 39, 39); border-radius: 4px;">
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Packages/nox.cck/Resources/nox.style.uss?fileID=7433441132597879392&amp;guid=956d93e835714844b98277f4fdbd77d3&amp;type=3#nox.style" />
+    <Style src="project://database/Packages/nox.editor/Assets/nox.editor/panels.uss?fileID=7433441132597879392&amp;guid=714eb72dda480a944a65e84bce8547a4&amp;type=3#panels" />
+    <ui:GroupBox class="m-0 border-b p-8">
+        <ui:VisualElement style="flex-direction: row; align-items: center;">
+            <ui:Label name="mod-id"      text="mod.id"  class="text-sm flex-grow" style="-unity-font-style: bold;" />
+            <ui:Label name="mod-version" text="v1.0.0" class="text-xs opacity-75 mr-8" />
+            <ui:VisualElement name="status-indicators" style="flex-direction: row; margin-right: 8px;">
+                <ui:VisualElement name="status-loaded" tooltip="Mod is loaded"            class="status-dot status-loaded-dot" />
+                <ui:VisualElement name="status-main"   tooltip="Has main entry points"   class="status-dot status-main-dot hidden" />
+                <ui:VisualElement name="status-client" tooltip="Has client entry points" class="status-dot status-client-dot hidden" />
+                <ui:VisualElement name="status-server" tooltip="Has server entry points" class="status-dot status-server-dot hidden" />
+                <ui:VisualElement name="status-editor" tooltip="Has editor entry points" class="status-dot status-editor-dot hidden" />
+                <ui:VisualElement name="status-custom" tooltip="Has custom entry points" class="status-dot status-custom-dot hidden" />
+            </ui:VisualElement>
+            <ui:Button text="Select" name="select-button" class="large" />
+        </ui:VisualElement>
+        <ui:Label name="mod-name"    text="Mod Name" class="text-sm mt-4" />
+        <ui:Label name="mod-license" text="License"  class="text-xs opacity-75" />
+        <ui:Foldout text="Details" value="false" name="details-foldout" class="mt-4">
+            <ui:Label text="Provides:" class="text-xs" style="-unity-font-style: bold;" />
+            <ui:VisualElement name="provides-list" class="pl-8" />
+            <ui:Label text="Entry Points:" class="text-xs mt-8" style="-unity-font-style: bold;" />
+            <ui:VisualElement name="entry-points" class="pl-8">
+                <ui:VisualElement name="main-entries"   class="hidden mb-4">
+                    <ui:Label text="Main:"   class="section-label-main" />
+                    <ui:VisualElement name="main-list"   class="pl-8" />
+                </ui:VisualElement>
+                <ui:VisualElement name="client-entries" class="hidden mb-4">
+                    <ui:Label text="Client:" class="section-label-client" />
+                    <ui:VisualElement name="client-list" class="pl-8" />
+                </ui:VisualElement>
+                <ui:VisualElement name="server-entries" class="hidden mb-4">
+                    <ui:Label text="Server:" class="section-label-server" />
+                    <ui:VisualElement name="server-list" class="pl-8" />
+                </ui:VisualElement>
+                <ui:VisualElement name="editor-entries" class="hidden mb-4">
+                    <ui:Label text="Editor:" class="section-label-editor" />
+                    <ui:VisualElement name="editor-list" class="pl-8" />
+                </ui:VisualElement>
+                <ui:VisualElement name="custom-entries" class="hidden mb-4">
+                    <ui:Label text="Custom:" class="section-label-custom" />
+                    <ui:VisualElement name="custom-list" class="pl-8" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:Foldout>
+    </ui:GroupBox>
+</ui:UXML>
         <engine:VisualElement name="header" style="flex-direction: row; align-items: center; margin-bottom: 4px;">
-            <engine:Label name="mod-id" text="mod.id" style="flex-grow: 1; font-size: 14px; -unity-font-style: bold;" />
-            <engine:Label name="mod-version" text="v1.0.0" style="color: rgb(180, 180, 180); margin-left: 8px;" />
+            <engine:Label name="mod-id" text="mod.id" class="mod-id-label" />
+            <engine:Label name="mod-version" text="v1.0.0" class="mod-version-label" />
             <engine:VisualElement name="status-indicators" style="flex-direction: row; margin-left: 8px;">
-                <engine:VisualElement name="status-loaded" tooltip="Mod is loaded" style="width: 8px; height: 8px; background-color: rgb(0, 255, 0); border-radius: 50%; margin: 2px;" />
-                <engine:VisualElement name="status-main" tooltip="Has main entry points" style="width: 8px; height: 8px; background-color: rgb(255, 103, 0); border-radius: 50%; margin: 2px;" />
-                <engine:VisualElement name="status-client" tooltip="Has client entry points" style="width: 8px; height: 8px; background-color: rgb(255, 0, 243); border-radius: 50%; margin: 2px;" />
-                <engine:VisualElement name="status-server" tooltip="Has server entry points" style="width: 8px; height: 8px; background-color: rgb(0, 255, 0); border-radius: 50%; margin: 2px;" />
-                <engine:VisualElement name="status-editor" tooltip="Has editor entry points" style="width: 8px; height: 8px; background-color: rgb(0, 240, 255); border-radius: 50%; margin: 2px;" />
-                <engine:VisualElement name="status-custom" tooltip="Has custom entry points" style="width: 8px; height: 8px; background-color: rgb(255, 226, 0); border-radius: 50%; margin: 2px;" />
+                <engine:VisualElement name="status-loaded" tooltip="Mod is loaded" class="status-dot status-loaded-dot" />
+                <engine:VisualElement name="status-main"   tooltip="Has main entry points"   class="status-dot status-main-dot hidden" />
+                <engine:VisualElement name="status-client" tooltip="Has client entry points" class="status-dot status-client-dot hidden" />
+                <engine:VisualElement name="status-server" tooltip="Has server entry points" class="status-dot status-server-dot hidden" />
+                <engine:VisualElement name="status-editor" tooltip="Has editor entry points" class="status-dot status-editor-dot hidden" />
+                <engine:VisualElement name="status-custom" tooltip="Has custom entry points" class="status-dot status-custom-dot hidden" />
             </engine:VisualElement>
             <engine:Button text="Select" name="select-button" style="margin-left: 8px;" />
         </engine:VisualElement>
-        
+
         <engine:VisualElement name="mod-info" style="margin-bottom: 4px;">
-            <engine:Label name="mod-name" text="Mod Name" style="color: rgb(200, 200, 200);" />
-            <engine:Label name="mod-license" text="License" style="color: rgb(150, 150, 150); font-size: 11px;" />
+            <engine:Label name="mod-name" text="Mod Name" class="mod-name-label" />
+            <engine:Label name="mod-license" text="License" class="mod-license-label" />
         </engine:VisualElement>
-        
+
         <engine:Foldout text="Details" value="false" name="details-foldout">
             <engine:VisualElement style="margin: 4px 0;">
-                <engine:Label name="provides-label" text="Provides:" style="font-size: 12px; -unity-font-style: bold; margin-bottom: 2px;" />
+                <engine:Label text="Provides:" style="font-size: 12px; -unity-font-style: bold; margin-bottom: 2px;" />
                 <engine:VisualElement name="provides-list" style="margin-left: 16px;" />
-                
+
                 <engine:Label text="Entry Points:" style="font-size: 12px; -unity-font-style: bold; margin: 8px 0 2px 0;" />
                 <engine:VisualElement name="entry-points" style="margin-left: 16px;">
-                    <engine:VisualElement name="main-entries" style="margin-bottom: 4px;">
-                        <engine:Label name="main-header" text="Main:" style="font-size: 11px; color: rgb(255, 103, 0);" />
+                    <engine:VisualElement name="main-entries" class="hidden" style="margin-bottom: 4px;">
+                        <engine:Label text="Main:" class="section-label-main" />
                         <engine:VisualElement name="main-list" style="margin-left: 12px;" />
                     </engine:VisualElement>
-                    
-                    <engine:VisualElement name="client-entries" style="margin-bottom: 4px;">
-                        <engine:Label name="client-header" text="Client:" style="font-size: 11px; color: rgb(255, 0, 243);" />
+                    <engine:VisualElement name="client-entries" class="hidden" style="margin-bottom: 4px;">
+                        <engine:Label text="Client:" class="section-label-client" />
                         <engine:VisualElement name="client-list" style="margin-left: 12px;" />
                     </engine:VisualElement>
-                    
-                    <engine:VisualElement name="server-entries" style="margin-bottom: 4px;">
-                        <engine:Label name="server-header" text="Server:" style="font-size: 11px; color: rgb(0, 255, 0);" />
+                    <engine:VisualElement name="server-entries" class="hidden" style="margin-bottom: 4px;">
+                        <engine:Label text="Server:" class="section-label-server" />
                         <engine:VisualElement name="server-list" style="margin-left: 12px;" />
                     </engine:VisualElement>
-                    
-                    <engine:VisualElement name="editor-entries" style="margin-bottom: 4px;">
-                        <engine:Label name="editor-header" text="Editor:" style="font-size: 11px; color: rgb(0, 240, 255);" />
+                    <engine:VisualElement name="editor-entries" class="hidden" style="margin-bottom: 4px;">
+                        <engine:Label text="Editor:" class="section-label-editor" />
                         <engine:VisualElement name="editor-list" style="margin-left: 12px;" />
                     </engine:VisualElement>
-                    
-                    <engine:VisualElement name="custom-entries" style="margin-bottom: 4px;">
-                        <engine:Label name="custom-header" text="Custom:" style="font-size: 11px; color: rgb(255, 226, 0);" />
+                    <engine:VisualElement name="custom-entries" class="hidden" style="margin-bottom: 4px;">
+                        <engine:Label text="Custom:" class="section-label-custom" />
                         <engine:VisualElement name="custom-list" style="margin-left: 12px;" />
                     </engine:VisualElement>
                 </engine:VisualElement>

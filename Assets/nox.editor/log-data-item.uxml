@@ -1,0 +1,4 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Packages/nox.cck/Resources/nox.style.uss?fileID=7433441132597879392&amp;guid=956d93e835714844b98277f4fdbd77d3&amp;type=3#nox.style" />
+    <ui:Label name="data-text" text="" class="text-xs opacity-75" />
+</ui:UXML>

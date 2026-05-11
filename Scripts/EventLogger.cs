@@ -6,162 +6,175 @@ using Nox.CCK.Mods;
 using Nox.CCK.Mods.Cores;
 using Nox.CCK.Mods.Events;
 using Nox.CCK.Mods.Initializers;
-using Nox.CCK.Mods.Panels;
-using Nox.CCK.Utils;
+using Nox.Editor.Panel;
 using UnityEngine.UIElements;
 
 namespace Nox.Editor {
-	public class EventLogger : IEditorModInitializer {
-		internal static IEditorModCoreAPI  CoreAPI;
-		private         IEditorPanel       _buildPanel;
-		private         EventSubscription _subLogs;
+	public class EventLogger : IEditorModInitializer, Nox.Editor.Panel.IPanel {
+		internal IEditorModCoreAPI API;
+		internal readonly List<EventData> History = new();
+		internal const uint MaxLogs = byte.MaxValue;
+		private EventSubscription _subscription;
 
 		public void OnInitializeEditor(IEditorModCoreAPI api) {
-			CoreAPI = api;
-			var panel = new EventLoggerPanel();
-			_buildPanel = api.PanelAPI.AddLocalPanel(panel);
-			_subLogs    = CoreAPI.EventAPI.Subscribe(null, ctx => panel.OnReceiveLog(ctx));
+			API           = api;
+			_subscription = api.EventAPI.Subscribe(null, ctx => OnReceiveLog(ctx));
 		}
 
-		public void OnDispose() {
-			CoreAPI.PanelAPI.RemoveLocalPanel(_buildPanel);
-			CoreAPI.EventAPI.Unsubscribe(_subLogs);
-			CoreAPI = null;
+		public void OnDisposeEditor() {
+			API?.EventAPI.Unsubscribe(_subscription);
+			History.Clear();
+			API = null;
+		}
+
+		public string[] GetPath()  => new[] { "editor", "logger" };
+		public string   GetLabel() => "Editor/Logger";
+
+		internal EventLoggerInstance Instance;
+
+		public IInstance[] GetInstances()
+			=> Instance != null ? new IInstance[] { Instance } : Array.Empty<IInstance>();
+
+		public IInstance Instantiate(IWindow window, Dictionary<string, object> data) {
+			if (Instance != null)
+				throw new InvalidOperationException($"{nameof(EventLogger)} only supports a single instance.");
+			return Instance = new EventLoggerInstance(this, window);
+		}
+
+		internal void OnReceiveLog(EventData ctx) {
+			History.Add(ctx);
+			while (History.Count > MaxLogs) History.RemoveAt(0);
+			Instance?.AppendLogEntry(ctx);
 		}
 	}
 
-	public class EventLoggerPanel : IEditorPanelBuilder {
-		public string GetId()
-			=> "logger";
+	public class EventLoggerInstance : IInstance {
+		private readonly EventLogger   _panel;
+		private readonly IWindow       _window;
+		private          VisualElement _content;
+		private          VisualElement _logsContainer;
+		private          string        _filter = string.Empty;
 
-		public string GetName()
-			=> "Dev/Logger";
-
-		public string GetTitle()
-			=> "Event Logger";
-
-		public bool IsHidden()
-			=> false;
-
-		public VisualElement[] GetHeaders() {
-			var button = new Button { text = "Clear" };
-			button.AddToClassList("nox-transparent");
-			button.RegisterCallback<ClickEvent>(OnClear);
-			return new VisualElement[] { button };
+		public EventLoggerInstance(EventLogger panel, IWindow window) {
+			_panel  = panel;
+			_window = window;
 		}
 
-		private void OnClear(ClickEvent evt) {
-			_history.Clear();
-			var logDiv = _root.Q<VisualElement>("logs");
-			logDiv.Clear();
-		}
+		public Nox.Editor.Panel.IPanel  GetPanel()  => _panel;
+		public IWindow GetWindow() => _window;
+		public string  GetTitle()  => "Event Logger";
 
-		private readonly VisualElement _root = new();
+		public void OnDestroy() => _panel.Instance = null;
 
-		public VisualElement Make(Dictionary<string, object> data) {
-			_root.ClearBindings();
-			_root.Clear();
-			_root.Add(EventLogger.CoreAPI.AssetAPI.GetAsset<VisualTreeAsset>("logger.uxml").CloneTree());
-			foreach (var context in _history)
-				OnReceiveLog(context, false);
-			return _root;
-		}
-
-		private readonly List<EventData> _history = new();
-		private const    uint            MaxLogs  = byte.MaxValue;
-
-		public void OnReceiveLog(EventData context, bool save = true) {
-			if (save) {
-				_history.Add(context);
-				while (_history.Count > MaxLogs)
-					_history.RemoveAt(0);
-			}
-
-			if (_root.childCount == 0) return;
-			var logDiv = _root.Q<VisualElement>("logs");
-			var foldout = new Foldout {
-				text  = CustomLabel(context),
-				value = false,
+		public IToolOption[] GetOptions()
+			=> new IToolOption[] {
+				new InputToolOption("Filter", OnFilterChanged),
+				new DefaultToolOption("Clear", OnClear)
 			};
 
-			// add to foldout the information of the event
-			var div = new VisualElement {
-				style = { flexDirection = FlexDirection.Column }
-			};
-
-			foldout.Add(div);
-
-			div.Add(
-				new Label(
-					$"Source mod: {context.Source.GetMetadata().GetId()}@{context.Source.GetMetadata().GetVersion()}"
-				)
-			);
-			div.Add(new Label($"Source channel: {context.SourceChannel}"));
-			var divData = new VisualElement { style = { flexDirection = FlexDirection.Column } };
-			div.Add(divData);
-			divData.Add(new Label($"Data ({context.Data.Length})"));
-			foreach (var obj in context.Data)
-				divData.Add(new Label($" - {ParseData(obj)}"));
-
-
-			logDiv.Add(foldout);
-
-			while (logDiv.childCount > MaxLogs)
-				logDiv.RemoveAt(0);
+		private void OnFilterChanged(string value) {
+			_filter = value ?? string.Empty;
+			ApplyFilter();
 		}
 
-		public void OnClosed() { }
-
-		private string ParseData(object obj) {
-			if (obj == null)
-				return "null";
-
-			if (obj is string s)
-				return $"\"{s}\"";
-
-			if (obj is Enum e)
-				return e.ToString();
-
-			if (obj is IList<object> list) {
-				var items = string.Join(", ", list.Select(ParseData));
-				return $"{obj.GetType().Name}[{items}]";
-			}
-
-			if (obj is IDictionary<string, object> dict) {
-				var items = string.Join(", ", dict.Select(kv => $"{kv.Key}={ParseData(kv.Value)}"));
-				return $"{obj.GetType().Name}[{items}]";
-			}
-
-			try {
-				return obj.ToString();
-			} catch {
-				return obj.GetType().Name;
+		private void ApplyFilter() {
+			if (_logsContainer == null) return;
+			foreach (var child in _logsContainer.Children()) {
+				var foldout = child.Q<Foldout>("entry-foldout");
+				var text    = foldout?.text ?? string.Empty;
+				var visible = string.IsNullOrEmpty(_filter)
+					|| text.IndexOf(_filter, StringComparison.OrdinalIgnoreCase) >= 0;
+				child.EnableInClassList("hidden", !visible);
 			}
 		}
 
-		private static string CustomLabel(EventData context)
-			=> context.EventName switch {
-				"mod_initialize" when context.TryGet(0, out IMod mod)
-					&& context.TryGet(1, out string entry)
-					&& context.TryGet(2, out Enum type)
-					=> $"{context.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()} => {type}",
-				"mod_post_initialize" when context.TryGet(0, out IMod mod)
-					&& context.TryGet(1, out string entry)
-					&& context.TryGet(2, out Enum type)
-					=> $"{context.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()} => {type}",
-				"mod_dispose" when context.TryGet(0, out IMod mod)
-					&& context.TryGet(1, out string entry)
-					&& context.TryGet(2, out Enum type)
-					=> $"{context.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()} => {type}",
-				"mod_pre_dispose" when context.TryGet(0, out IMod mod)
-					&& context.TryGet(1, out string entry)
-					&& context.TryGet(2, out Enum type)
-					=> $"{context.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()} => {type}",
-				"mod_disabled" when context.TryGet(0, out IMod mod) && context.TryGet(1, out string entry)
-					=> $"{context.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()}",
-				"mod_enabled" when context.TryGet(0, out IMod mod) && context.TryGet(1, out string entry)
-					=> $"{context.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()}",
-				_ => context.EventName
+		public VisualElement GetContent() {
+			if (_content != null) return _content;
+
+			_content = _panel.API.AssetAPI.GetAsset<VisualTreeAsset>("logger.uxml").CloneTree();
+			_content.AddToClassList("flex-fill");
+			_logsContainer = _content.Q<VisualElement>("logs");
+
+			foreach (var ctx in _panel.History)
+				AppendLogEntry(ctx, false);
+
+			ApplyFilter();
+			return _content;
+		}
+
+		internal void AppendLogEntry(EventData ctx, bool trim = true) {
+			if (_logsContainer == null) return;
+
+			var entry   = _panel.API.AssetAPI.GetAsset<VisualTreeAsset>("log-entry.uxml").CloneTree();
+			var foldout = entry.Q<Foldout>("entry-foldout");
+			if (foldout != null) foldout.text = CustomLabel(ctx);
+
+			entry.Q<Label>("source-mod").text     = $"{ctx.Source.GetMetadata().GetId()}@{ctx.Source.GetMetadata().GetVersion()}";
+			entry.Q<Label>("source-channel").text = ctx.SourceChannel.ToString();
+			entry.Q<Label>("data-count").text     = $"Data ({ctx.Data.Length})";
+
+			var dataList = entry.Q<VisualElement>("data-list");
+			if (dataList != null) {
+				foreach (var obj in ctx.Data) {
+					var item = _panel.API.AssetAPI.GetAsset<VisualTreeAsset>("log-data-item.uxml").CloneTree();
+					item.Q<Label>("data-text").text = ParseData(obj);
+					dataList.Add(item);
+				}
+			}
+
+			// Apply current filter to the new entry
+			var label   = foldout?.text ?? string.Empty;
+			var visible = string.IsNullOrEmpty(_filter)
+				|| label.IndexOf(_filter, StringComparison.OrdinalIgnoreCase) >= 0;
+			entry.EnableInClassList("hidden", !visible);
+
+			_logsContainer.Add(entry);
+
+			if (trim) {
+				while (_logsContainer.childCount > EventLogger.MaxLogs)
+					_logsContainer.RemoveAt(0);
+			}
+		}
+
+		private void OnClear() {
+			_panel.History.Clear();
+			_logsContainer?.Clear();
+		}
+
+		private static string ParseData(object obj) {
+			if (obj == null) return "null";
+			if (obj is string s) return $"\"{s}\"";
+			if (obj is Enum e) return e.ToString();
+			if (obj is IList<object> list)
+				return $"{obj.GetType().Name}[{string.Join(", ", list.Select(ParseData))}]";
+			if (obj is IDictionary<string, object> dict)
+				return $"{obj.GetType().Name}[{string.Join(", ", dict.Select(kv => $"{kv.Key}={ParseData(kv.Value)}"))}]";
+			try { return obj.ToString(); } catch { return obj.GetType().Name; }
+		}
+
+		private static string CustomLabel(EventData ctx)
+			=> ctx.EventName switch {
+				"mod_initialize" when ctx.TryGet(0, out IMod mod)
+					&& ctx.TryGet(1, out string entry)
+					&& ctx.TryGet(2, out Enum type)
+					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()} => {type}",
+				"mod_post_initialize" when ctx.TryGet(0, out IMod mod)
+					&& ctx.TryGet(1, out string entry)
+					&& ctx.TryGet(2, out Enum type)
+					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()} => {type}",
+				"mod_dispose" when ctx.TryGet(0, out IMod mod)
+					&& ctx.TryGet(1, out string entry)
+					&& ctx.TryGet(2, out Enum type)
+					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()} => {type}",
+				"mod_pre_dispose" when ctx.TryGet(0, out IMod mod)
+					&& ctx.TryGet(1, out string entry)
+					&& ctx.TryGet(2, out Enum type)
+					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()} => {type}",
+				"mod_disabled" when ctx.TryGet(0, out IMod mod) && ctx.TryGet(1, out string entry)
+					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()}",
+				"mod_enabled" when ctx.TryGet(0, out IMod mod) && ctx.TryGet(1, out string entry)
+					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()}",
+				_ => ctx.EventName
 			};
 	}
 }
