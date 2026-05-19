@@ -1,0 +1,12 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Packages/nox.cck/Resources/nox.style.uss?fileID=7433441132597879392&amp;guid=956d93e835714844b98277f4fdbd77d3&amp;type=3#nox.style" />
+    <Style src="project://database/Packages/nox.editor/Assets/nox.editor/panels.uss?fileID=7433441132597879392&amp;guid=714eb72dda480a944a65e84bce8547a4&amp;type=3#panels" />
+    <ui:VisualElement class="flex-grow flex-col">
+        <ui:VisualElement class="flex-row p-8 border-b" style="flex-shrink: 0;">
+            <ui:Label name="stats-label" text="Loading..." class="flex-grow text-sm opacity-75 text-left" />
+        </ui:VisualElement>
+        <ui:ScrollView style="flex-grow: 1;">
+            <ui:VisualElement name="pack-list" class="p-4" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

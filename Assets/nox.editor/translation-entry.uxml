@@ -1,0 +1,11 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Packages/nox.cck/Resources/nox.style.uss?fileID=7433441132597879392&amp;guid=956d93e835714844b98277f4fdbd77d3&amp;type=3#nox.style" />
+    <Style src="project://database/Packages/nox.editor/Assets/nox.editor/panels.uss?fileID=7433441132597879392&amp;guid=714eb72dda480a944a65e84bce8547a4&amp;type=3#panels" />
+    <ui:VisualElement class="tp-row flex-col py-4">
+        <ui:VisualElement class="flex-row">
+            <ui:Label     name="entry-badge" text=""  class="tp-badge hidden" />
+            <ui:TextField name="entry-key"   class="tp-field tp-key" readonly="true" />
+        </ui:VisualElement>
+        <ui:TextField name="entry-value" class="tp-field tp-value" readonly="true" />
+    </ui:VisualElement>
+</ui:UXML>

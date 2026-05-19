@@ -13,7 +13,8 @@
     "editor": [
       "Nox.Editor.EventLogger",
       "Nox.Editor.Performances",
-      "Nox.Editor.ModDetails"
+      "Nox.Editor.ModDetails",
+      "Nox.Editor.TranslationsPanel"
     ]
   },
   "contact": {

@@ -1,0 +1,9 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Packages/nox.cck/Resources/nox.style.uss?fileID=7433441132597879392&amp;guid=956d93e835714844b98277f4fdbd77d3&amp;type=3#nox.style" />
+    <Style src="project://database/Packages/nox.editor/Assets/nox.editor/panels.uss?fileID=7433441132597879392&amp;guid=714eb72dda480a944a65e84bce8547a4&amp;type=3#panels" />
+    <ui:VisualElement class="tp-pack mb-8">
+        <ui:VisualElement name="pack-header" class="tp-pack-header flex-row pl-4 pt-4 pb-4" />
+        <ui:VisualElement class="tp-pack-sep mb-4" />
+        <ui:VisualElement name="entries" class="pl-4" />
+    </ui:VisualElement>
+</ui:UXML>
