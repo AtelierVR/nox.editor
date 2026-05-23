@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 using Nox.ModLoader;
 using UnityEditor;
@@ -48,13 +49,23 @@ namespace Nox.Editor {
 			);
 		}
 
+		private static string ReadAsmDefName(string path) {
+			try {
+				var json = File.ReadAllText(path);
+				var match = Regex.Match(json, @"""name""\s*:\s*""([^""]+)""");
+				return match.Success ? match.Groups[1].Value : null;
+			} catch {
+				return null;
+			}
+		}
+
 		private static (string, string[])[] GetAssemblyByMod() {
 			var assetMods   = Directory.GetFiles("Assets", "nox.mod.*", SearchOption.AllDirectories);
 			var packageMods = Directory.GetFiles("Packages", "nox.mod.*", SearchOption.AllDirectories);
 			return (from mod in assetMods.Concat(packageMods).Distinct().ToArray()
 				select Path.GetDirectoryName(mod) into dir
 				let def = Directory.GetFiles(dir, "*.asmdef", SearchOption.AllDirectories)
-				let asmNames = def.Select(Path.GetFileNameWithoutExtension)
+				let asmNames = def.Select(ReadAsmDefName).Where(n => n != null)
 				let pluginNames = GetManagedPluginAssemblyNames(dir)
 				select (Path.Combine(dir, LinkXmlName), asmNames.Concat(pluginNames).Distinct().ToArray())).ToArray();
 		}
