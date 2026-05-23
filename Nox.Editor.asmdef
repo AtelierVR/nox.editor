@@ -10,10 +10,10 @@
         "Nox.Avatars",
         "Nox.Controllers",
         "Nox.Controllers.Runtime",
-        "api.nox.session",
-        "api.nox.relay",
-        "api.nox.network",
-        "api.nox.xr"
+        "Nox.Mods.Sessions",
+        "Nox.Mods.Relay",
+        "Nox.Mods.Network",
+        "Nox.XR"
     ],
     "includePlatforms": [
         "Editor"
