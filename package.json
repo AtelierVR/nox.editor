@@ -1,5 +1,6 @@
 {
   "name": "nox.editor",
   "displayName": "Nox - Editor",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "description": "Editor utilities and development tools for Nox."
 }
