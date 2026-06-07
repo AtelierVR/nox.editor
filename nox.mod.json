@@ -1,33 +1,14 @@
 {
-  "type": "mod",
+  "type": "library",
   "id": "nox.editor",
-  "provides": [
-    "editor"
-  ],
-  "name": "Nox Editor",
-  "version": "1.0.0",
-  "description": "Editor utilities and development tools for Nox.",
-  "license": "GPL-3.0",
-  "icon": null,
-  "entrypoints": {
-    "editor": [
-      "Nox.Editor.EventLogger",
-      "Nox.Editor.Performances",
-      "Nox.Editor.ModDetails",
-      "Nox.Editor.TranslationsPanel"
-    ]
+  "registers": {
+    "nox.cck": "git+https://github.com/AtelierVR/nox.cck.git",
+    "nox.controllers": "git+https://github.com/AtelierVR/nox.controllers.git",
+    "com.cysharp.unitask": "git+https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask"
   },
-  "contact": {
-    "email": "hactazia@gmail.com",
-    "source": "https://github.com/AtelierVR/nox.editor",
-    "website": "https://nox.hactazia.fr/",
-    "issues": "https://github.com/AtelierVR/nox.editor/issues"
-  },
-  "authors": [
-    {
-      "name": "Hactazia",
-      "email": "hactazia@gmail.com",
-      "website": "https://hactazia.fr/"
-    }
+  "relations": [
+    { "id": "nox.cck", "type": "depends" },
+    { "id": "nox.controllers", "type": "depends" },
+    { "id": "com.cysharp.unitask", "type": "depends" }
   ]
 }
