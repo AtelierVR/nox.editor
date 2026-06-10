@@ -214,7 +214,9 @@ namespace Nox.Editor {
         private static string[] GetEntries(IMod mod, string section) {
             try {
                 var ep = mod.GetMetadata().GetEntryPoints();
-                return ep?.Has(section) == true ? ep.Get(section) : Array.Empty<string>();
+                return ep?.Has(section) == true
+                    ? ep.Get(section).Select(e => e.FullName).ToArray()
+                    : Array.Empty<string>();
             } catch { return Array.Empty<string>(); }
         }
     }
