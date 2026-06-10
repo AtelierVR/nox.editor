@@ -74,6 +74,7 @@ namespace Nox.Editor {
 						yield return fullname;
 				}
 			}
+			}
 		}
 
 		// --- asmdef name helpers ---
@@ -99,15 +100,16 @@ namespace Nox.Editor {
 				if (name != null)
 					index[name] = path;
 			}
+
 			// Also scan Library/PackageCache/ for asmdefs not yet imported by AssetDatabase (CI builds)
 			var cacheDir = Path.Combine(Application.dataPath, "..", "Library", "PackageCache");
-			if (Directory.Exists(cacheDir)) {
+			if (Directory.Exists(cacheDir))
 				foreach (var asmdef in Directory.GetFiles(cacheDir, "*.asmdef", SearchOption.AllDirectories)) {
 					var name = ReadAsmDefName(asmdef);
 					if (name != null && !index.ContainsKey(name))
 						index[name] = asmdef;
 				}
-			}
+
 			return index;
 		}
 
