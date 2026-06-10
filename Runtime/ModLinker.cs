@@ -54,9 +54,13 @@ namespace Nox.Editor {
 			);
 		}
 
-		/// <summary>Reads assembly fullnames from every link.xml found under Packages/.</summary>
+		/// <summary>Reads assembly fullnames from every link.xml found under Packages/ and Library/PackageCache/.</summary>
 		private static IEnumerable<string> ReadAllPackageLinkXmlAssemblies() {
-			foreach (var path in Directory.GetFiles("Packages", LinkXmlName, SearchOption.AllDirectories)) {
+			var dirs = new List<string> { "Packages" };
+			var cacheDir = Path.Combine(Application.dataPath, "..", "Library", "PackageCache");
+			if (Directory.Exists(cacheDir)) dirs.Add(cacheDir);
+			foreach (var dir in dirs) {
+				foreach (var path in Directory.GetFiles(dir, LinkXmlName, SearchOption.AllDirectories)) {
 				XmlDocument doc;
 				try {
 					doc = new XmlDocument();
@@ -94,6 +98,15 @@ namespace Nox.Editor {
 				var name = ReadAsmDefName(path);
 				if (name != null)
 					index[name] = path;
+			}
+			// Also scan Library/PackageCache/ for asmdefs not yet imported by AssetDatabase (CI builds)
+			var cacheDir = Path.Combine(Application.dataPath, "..", "Library", "PackageCache");
+			if (Directory.Exists(cacheDir)) {
+				foreach (var asmdef in Directory.GetFiles(cacheDir, "*.asmdef", SearchOption.AllDirectories)) {
+					var name = ReadAsmDefName(asmdef);
+					if (name != null && !index.ContainsKey(name))
+						index[name] = asmdef;
+				}
 			}
 			return index;
 		}
@@ -138,7 +151,12 @@ namespace Nox.Editor {
 		private static (string, string[])[] GetAssemblyByMod() {
 			var assetMods   = Directory.GetFiles("Assets", "nox.mod.*", SearchOption.AllDirectories);
 			var packageMods = Directory.GetFiles("Packages", "nox.mod.*", SearchOption.AllDirectories);
-			return (from mod in assetMods.Concat(packageMods).Distinct().ToArray()
+			// Also scan Library/PackageCache/ for mods resolved from git/upm (CI builds)
+			var cacheDir = Path.Combine(Application.dataPath, "..", "Library", "PackageCache");
+			var cacheMods = Directory.Exists(cacheDir)
+				? Directory.GetFiles(cacheDir, "nox.mod.*", SearchOption.AllDirectories)
+				: Array.Empty<string>();
+			return (from mod in assetMods.Concat(packageMods).Concat(cacheMods).Distinct().ToArray()
 				select Path.GetDirectoryName(mod) into dir
 				let def = Directory.GetFiles(dir, "*.asmdef", SearchOption.AllDirectories)
 				let asmNames = def.Select(ReadAsmDefName).Where(n => n != null)
