@@ -30,13 +30,6 @@ namespace Nox.Editor {
 			"System.Configuration",
 		};
 
-		// Editor-only managed plugins that conflict with UnityLinker's own assemblies.
-		private static readonly HashSet<string> EditorOnlyPlugins = new(StringComparer.OrdinalIgnoreCase) {
-			"Mono.Cecil",
-			"BouncyCastle.Cryptography",
-			"System.Security.Cryptography.Pkcs",
-		};
-
 		[MenuItem("Nox/Tools/Update Linker Files")]
 		public static void EnsureLinkerClassExists() {
 			var li = new List<string>();
@@ -57,9 +50,7 @@ namespace Nox.Editor {
 
 			UpdateLinkXml(
 				Path.Combine(Application.dataPath, LinkXmlName),
-				allWithDeps.Concat(fromPackageLinkXmls).Concat(AlwaysPreservedAssemblies)
-					.Where(a => !EditorOnlyPlugins.Contains(a))
-					.Distinct().OrderBy(a => a).ToArray()
+				allWithDeps.Concat(fromPackageLinkXmls).Concat(AlwaysPreservedAssemblies).Distinct().OrderBy(a => a).ToArray()
 			);
 		}
 
