@@ -6,14 +6,14 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
-using Nox.ModLoader;
+using Nox.CCK.Attributes;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 using Logger = Nox.CCK.Utils.Logger;
 
 namespace Nox.Editor {
-	public class ModLinker : UnityEditor.AssetModificationProcessor {
+	public class ModLinker : AssetModificationProcessor {
 		private static string[] OnWillSaveAssets(string[] paths) {
 			if (paths.Any(path => path.EndsWith(".asmdef")))
 				ModLinkerHelper.EnsureLinkerClassExists();
@@ -31,6 +31,7 @@ namespace Nox.Editor {
 		};
 
 		[MenuItem("Nox/Tools/Update Linker Files")]
+		[Nox("build:any")]
 		public static void EnsureLinkerClassExists() {
 			var li = new List<string>();
 
@@ -96,6 +97,7 @@ namespace Nox.Editor {
 			var index = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 			foreach (var guid in AssetDatabase.FindAssets($"t:{nameof(AssemblyDefinitionAsset)}")) {
 				var path = AssetDatabase.GUIDToAssetPath(guid);
+				if (IsAutoReferencedFalse(path)) continue;
 				var name = ReadAsmDefName(path);
 				if (name != null)
 					index[name] = path;
@@ -105,12 +107,22 @@ namespace Nox.Editor {
 			var cacheDir = Path.Combine(Application.dataPath, "..", "Library", "PackageCache");
 			if (Directory.Exists(cacheDir))
 				foreach (var asmdef in Directory.GetFiles(cacheDir, "*.asmdef", SearchOption.AllDirectories)) {
+					if (IsAutoReferencedFalse(asmdef)) continue;
 					var name = ReadAsmDefName(asmdef);
 					if (name != null && !index.ContainsKey(name))
 						index[name] = asmdef;
 				}
 
 			return index;
+		}
+
+		private static bool IsAutoReferencedFalse(string asmdefPath) {
+			try {
+				var json = File.ReadAllText(asmdefPath);
+				return Regex.IsMatch(json, @"""autoReferenced""\s*:\s*false");
+			} catch {
+				return false;
+			}
 		}
 
 		/// <summary>Reads the "references" array from an asmdef and resolves each entry to an assembly name.</summary>
@@ -153,7 +165,6 @@ namespace Nox.Editor {
 		private static (string, string[])[] GetAssemblyByMod() {
 			var assetMods   = Directory.GetFiles("Assets", "nox.mod.*", SearchOption.AllDirectories);
 			var packageMods = Directory.GetFiles("Packages", "nox.mod.*", SearchOption.AllDirectories);
-			// Also scan Library/PackageCache/ for mods resolved from git/upm (CI builds)
 			var cacheDir = Path.Combine(Application.dataPath, "..", "Library", "PackageCache");
 			var cacheMods = Directory.Exists(cacheDir)
 				? Directory.GetFiles(cacheDir, "nox.mod.*", SearchOption.AllDirectories)
@@ -161,6 +172,8 @@ namespace Nox.Editor {
 			return (from mod in assetMods.Concat(packageMods).Concat(cacheMods).Distinct().ToArray()
 				select Path.GetDirectoryName(mod) into dir
 				let def = Directory.GetFiles(dir, "*.asmdef", SearchOption.AllDirectories)
+					.Where(d => !IsAutoReferencedFalse(d))
+					.ToArray()
 				let asmNames = def.Select(ReadAsmDefName).Where(n => n != null)
 				let pluginNames = GetManagedPluginAssemblyNames(dir)
 				select (Path.Combine(dir, LinkXmlName), asmNames.Concat(pluginNames).Distinct().ToArray())).ToArray();
