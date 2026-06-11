@@ -71,7 +71,7 @@ namespace Nox.Editor {
 				if (nodes == null) continue;
 				foreach (XmlNode node in nodes) {
 					var fullname = node.Attributes?["fullname"]?.Value;
-					if (!string.IsNullOrEmpty(fullname))
+					if (IsValidAssemblyName(fullname))
 						yield return fullname;
 				}
 			}
@@ -90,6 +90,21 @@ namespace Nox.Editor {
 			}
 		}
 
+		/// <summary>Returns true if the asmdef is an editor-only assembly (name ends with "Editor" or path contains /Editor/).</summary>
+		private static bool IsEditorAsmDef(string asmdefPath) {
+			var name = ReadAsmDefName(asmdefPath);
+			if (name?.EndsWith("Editor", StringComparison.OrdinalIgnoreCase) == true)
+				return true;
+			return asmdefPath.Replace('\\', '/').Split('/')
+				.Any(seg => seg.Equals("Editor", StringComparison.OrdinalIgnoreCase));
+		}
+
+		/// <summary>Filters out invalid assembly names (empty, trailing dot, etc.) that would crash UnityLinker.</summary>
+		private static bool IsValidAssemblyName(string name)
+			=> !string.IsNullOrEmpty(name)
+				&& !name.EndsWith(".")
+				&& name.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
+		
 		// --- transitive dependency resolution ---
 
 		/// <summary>Builds a map of assembly name → asmdef path for every asmdef in the project.</summary>
@@ -98,6 +113,7 @@ namespace Nox.Editor {
 			foreach (var guid in AssetDatabase.FindAssets($"t:{nameof(AssemblyDefinitionAsset)}")) {
 				var path = AssetDatabase.GUIDToAssetPath(guid);
 				if (IsAutoReferencedFalse(path)) continue;
+				if (IsEditorAsmDef(path)) continue;
 				var name = ReadAsmDefName(path);
 				if (name != null)
 					index[name] = path;
@@ -108,6 +124,7 @@ namespace Nox.Editor {
 			if (Directory.Exists(cacheDir))
 				foreach (var asmdef in Directory.GetFiles(cacheDir, "*.asmdef", SearchOption.AllDirectories)) {
 					if (IsAutoReferencedFalse(asmdef)) continue;
+					if (IsEditorAsmDef(asmdef)) continue;
 					var name = ReadAsmDefName(asmdef);
 					if (name != null && !index.ContainsKey(name))
 						index[name] = asmdef;
@@ -172,7 +189,7 @@ namespace Nox.Editor {
 			return (from mod in assetMods.Concat(packageMods).Concat(cacheMods).Distinct().ToArray()
 				select Path.GetDirectoryName(mod) into dir
 				let def = Directory.GetFiles(dir, "*.asmdef", SearchOption.AllDirectories)
-					.Where(d => !IsAutoReferencedFalse(d))
+					.Where(d => !IsAutoReferencedFalse(d) && !IsEditorAsmDef(d))
 					.ToArray()
 				let asmNames = def.Select(ReadAsmDefName).Where(n => n != null)
 				let pluginNames = GetManagedPluginAssemblyNames(dir)
