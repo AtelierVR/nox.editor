@@ -206,9 +206,11 @@ namespace Nox.Editor {
 				try {
 					name = AssemblyName.GetAssemblyName(dll).Name;
 				} catch {
-					// native DLL or invalid managed assembly — skip
+					// Managed .NET 6+ assemblies may fail to load via Mono reflection.
+					// Fall back to the file name (minus .dll) as the assembly name.
+					try { name = Path.GetFileNameWithoutExtension(dll); } catch { }
 				}
-				if (name != null)
+				if (!string.IsNullOrEmpty(name))
 					yield return name;
 			}
 		}
