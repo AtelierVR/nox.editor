@@ -193,7 +193,7 @@ namespace Nox.Editor
         /// Disables empty asmdefs by setting autoReferenced=false.
         /// Returns true if any were disabled, false if nothing to do.
         /// </summary>
-        [Nox("build:any")]
+        [NoxInvokable("build:any")]
         public static bool CleanupForBuild()
         {
             var empty = FindEmptyAsmdefs();

@@ -31,7 +31,7 @@ namespace Nox.Editor {
 		};
 
 		[MenuItem("Nox/Tools/Update Linker Files")]
-		[Nox("build:any")]
+		[NoxInvokable("build:any")]
 		public static void EnsureLinkerClassExists() {
 			var li = new List<string>();
 
