@@ -51,7 +51,7 @@ namespace Nox.Editor {
 		}
 
 
-		[MenuItem("Nox/Scenes/Refresh Scenes in Build Settings")]
+		[MenuItem("Nox/Tools/Refresh Scenes in Build Settings")]
 		public static void RefreshScenesInBuildSettings() {
 			var oldScenes = EditorBuildSettings.scenes;
 			var newScenes = AssetDatabase.FindAssets("t:Scene")
