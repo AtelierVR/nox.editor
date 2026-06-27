@@ -10,7 +10,7 @@ using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 namespace Nox.Editor {
-    public class TranslationsPanel : IEditorModInitializer, Nox.Editor.Panel.IPanel {
+    public class TranslationsPanel : IEditorModInitializer, Panel.IPanel {
         internal IEditorModCoreAPI API;
 
         public void OnInitializeEditor(IEditorModCoreAPI api) => API = api;

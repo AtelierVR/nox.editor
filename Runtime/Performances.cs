@@ -14,7 +14,7 @@ using UnityEngine.Profiling;
 using UnityEngine.UIElements;
 
 namespace Nox.Editor {
-	public class Performances : IEditorModInitializer, Nox.Editor.Panel.IPanel {
+	public class Performances : IEditorModInitializer, Panel.IPanel {
 		internal IEditorModCoreAPI API;
 		private EventSubscription[] _events = Array.Empty<EventSubscription>();
 

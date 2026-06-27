@@ -10,15 +10,15 @@ using Nox.Editor.Panel;
 using UnityEngine.UIElements;
 
 namespace Nox.Editor {
-	public class EventLogger : IEditorModInitializer, Nox.Editor.Panel.IPanel {
+	public class EventLogger : IEditorModInitializer, Panel.IPanel {
 		internal IEditorModCoreAPI API;
-		internal readonly List<EventData> History = new();
+		readonly internal List<EventData> History = new();
 		internal const uint MaxLogs = byte.MaxValue;
 		private EventSubscription _subscription;
 
 		public void OnInitializeEditor(IEditorModCoreAPI api) {
 			API           = api;
-			_subscription = api.EventAPI.Subscribe(null, ctx => OnReceiveLog(ctx));
+			_subscription = api.EventAPI.Subscribe(null, OnReceiveLog);
 		}
 
 		public void OnDisposeEditor() {
