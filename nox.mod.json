@@ -1,6 +1,7 @@
 {
   "type": "mod",
   "id": "nox.editor",
+  "version": "1.0.x",
   "relations": [
     {
       "id": "nox.cck",
