@@ -10,9 +10,6 @@
         "Nox.Avatars",
         "Nox.Controllers",
         "Nox.Controllers.Runtime",
-        "Nox.Mods.Sessions",
-        "Nox.Mods.Relay",
-        "Nox.Mods.Network",
         "Nox.XR"
     ],
     "includePlatforms": [
