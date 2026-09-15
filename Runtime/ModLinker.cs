@@ -24,6 +24,9 @@ namespace Nox.Editor {
 	public static class ModLinkerHelper {
 		private const string LinkXmlName = "link.xml";
 
+		/// <summary>UTF-8 sans BOM : un link.xml doit rester diffable et idempotent.</summary>
+		private static readonly UTF8Encoding Utf8NoBom = new(false);
+
 		// Assemblies that must always be preserved regardless of mod discover.
 		private static readonly string[] AlwaysPreservedAssemblies = {
 			"System",
@@ -216,11 +219,12 @@ namespace Nox.Editor {
 		}
 
 
+		/// <summary>Écrit le link.xml en UTF-8 sans BOM. Ne touche au fichier que si son contenu change réellement.</summary>
 		private static void UpdateLinkXml(string path, string[] assemblies) {
 			try {
-				var doc           = new XmlDocument();
-				var linkerElement = doc.CreateElement("linker");
+				var doc = new XmlDocument();
 				doc.AppendChild(doc.CreateXmlDeclaration("1.0", "utf-8", null));
+				var linkerElement = doc.CreateElement("linker");
 				doc.AppendChild(linkerElement);
 
 				foreach (var assembly in assemblies) {
@@ -230,26 +234,30 @@ namespace Nox.Editor {
 					linkerElement.AppendChild(assemblyElement);
 				}
 
-				// Sérialiser en mémoire
+				// Sérialiser en mémoire : Utf8NoBom garantit l'absence de BOM,
+				// contrairement à Encoding.UTF8 / File.WriteAllText(path, s, Encoding.UTF8).
 				var xmlSettings = new XmlWriterSettings {
 					Indent       = true,
 					IndentChars  = "\t",
 					NewLineChars = "\n",
-					Encoding     = new UTF8Encoding(false)
+					Encoding     = Utf8NoBom
 				};
-				string newContent;
+				byte[] content;
 				using (var ms = new MemoryStream())
 				using (var xw = XmlWriter.Create(ms, xmlSettings)) {
 					doc.Save(xw);
 					xw.Flush();
-					newContent = Encoding.UTF8.GetString(ms.ToArray());
+					content = ms.ToArray();
 				}
 
-				// N'écrire sur le disque que si le contenu a vraiment changé
-				if (File.Exists(path) && File.ReadAllText(path, Encoding.UTF8) == newContent)
+				// Comparaison sur les octets bruts : un fichier identique au BOM près
+				// est donc bien réécrit (File.ReadAllText le retirerait à la lecture
+				// et masquerait la différence), tout en laissant le fichier — et son
+				// mtime, donc le reimport Unity — intact quand rien n'a changé.
+				if (File.Exists(path) && File.ReadAllBytes(path).SequenceEqual(content))
 					return;
 
-				File.WriteAllText(path, newContent, Encoding.UTF8);
+				File.WriteAllBytes(path, content);
 			} catch (Exception e) {
 				Logger.LogError($"Failed to update link.xml at {path}: {e}");
 				Logger.LogError(e);
