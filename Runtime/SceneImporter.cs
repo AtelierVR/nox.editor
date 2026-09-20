@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
-using UnityEngine.SceneManagement;
 using Logger = Nox.CCK.Utils.Logger;
 
 namespace Nox.Editor {
