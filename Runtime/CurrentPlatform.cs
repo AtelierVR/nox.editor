@@ -4,7 +4,7 @@ using PlatformExtensions = Nox.CCK.Utils.PlatformExtensions;
 
 namespace Nox.Editor {
 	public class CurrentPlatform {
-		[MenuItem("Nox/Platform/Switch to Runtime")]
+		[MenuItem("Nox/Tools/Switch to Runtime")]
 		public static void SwitchPlatform() {
 			var runtime = PlatformExtensions.RuntimePlatform;
 			var current = PlatformExtensions.CurrentPlatform;
