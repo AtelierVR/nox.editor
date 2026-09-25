@@ -571,9 +571,11 @@ namespace Nox.Editor {
 			foreach (var group in issues.GroupBy(i => i.AssetPath)) {
 				var context = AssetDatabase.LoadAssetAtPath<UObject>(group.Key);
 
+				var label = string.IsNullOrEmpty(group.Key) ? string.Empty : group.Key + ": ";
+
 				foreach (var issue in group)
-					if (issue.Severity == PluginIssueSeverity.Error) Logger.LogError(Prefix + issue.Message, context);
-					else Logger.LogWarning(Prefix + issue.Message, context);
+					if (issue.Severity == PluginIssueSeverity.Error) Logger.LogError(Prefix + label + issue.Message, context);
+					else Logger.LogWarning(Prefix + label + issue.Message, context);
 			}
 		}
 
