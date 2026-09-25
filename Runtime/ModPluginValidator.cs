@@ -580,15 +580,13 @@ namespace Nox.Editor {
 		// ── Mapping helpers ──
 
 		private static BuildTarget? ToBuildTarget(Platform platform, Architecture arch) {
-			switch (platform) {
-				case Platform.Windows:  return arch == Architecture.X86 ? BuildTarget.StandaloneWindows : BuildTarget.StandaloneWindows64;
-				case Platform.Linux:    return BuildTarget.StandaloneLinux64;
-				case Platform.MacOS:    return BuildTarget.StandaloneOSX;
-				case Platform.Android:  return BuildTarget.Android;
-				case Platform.IOS:      return BuildTarget.iOS;
-				case Platform.VisionOS: return BuildTarget.VisionOS;
-				default:                return null;
-			}
+			if (platform == Platform.Windows)  return arch == Architecture.X86 ? BuildTarget.StandaloneWindows : BuildTarget.StandaloneWindows64;
+			if (platform == Platform.Linux)    return BuildTarget.StandaloneLinux64;
+			if (platform == Platform.MacOS)    return BuildTarget.StandaloneOSX;
+			if (platform == Platform.Android)  return BuildTarget.Android;
+			if (platform == Platform.IOS)      return BuildTarget.iOS;
+			if (platform == Platform.VisionOS) return BuildTarget.VisionOS;
+			return null;
 		}
 
 		/// <summary>Unity's <c>CPU</c> platform data value for an architecture folder.</summary>
