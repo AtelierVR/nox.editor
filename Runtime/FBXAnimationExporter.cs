@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 using System.Collections.Generic;
+using System.Text;
+using System;
+using Logger = Nox.CCK.Utils.Logger;
 
 namespace Nox.Editor {
 public class FBXAnimationExporter : EditorWindow
@@ -14,34 +17,49 @@ public class FBXAnimationExporter : EditorWindow
     private bool includeRootMotion = true;
     private Vector2 scrollPosition;
     private List<AnimationClip> animationClips = new List<AnimationClip>();
+    private readonly HashSet<string> usedFileNames = new HashSet<string>();
+
+    private static GUIStyle mutedLabel;
+
+    /// <summary>Dimmed label used to preview a renamed (sanitized) export file.</summary>
+    private static GUIStyle MutedLabel
+    {
+        get
+        {
+            if (mutedLabel == null)
+            {
+                mutedLabel = new GUIStyle(EditorStyles.miniLabel);
+                mutedLabel.normal.textColor = EditorGUIUtility.isProSkin
+                    ? new Color(1f, 1f, 1f, 0.5f)
+                    : new Color(0f, 0f, 0f, 0.5f);
+                mutedLabel.padding.left = 14;
+            }
+
+            return mutedLabel;
+        }
+    }
 
     [MenuItem("Nox/Tools/FBX Animation Exporter")]
     public static void ShowWindow()
-    {
-        GetWindow<FBXAnimationExporter>("FBX Animation Exporter");
-    }
+        => GetWindow<FBXAnimationExporter>("FBX Animation Exporter");
 
-    private void OnGUI()
-    {
-        GUILayout.Label("Exportateur d'Animations FBX", EditorStyles.boldLabel);
-        EditorGUILayout.Space();
-
-        // Sélection du FBX
-        EditorGUILayout.LabelField("Fichier FBX source:", EditorStyles.label);
+    private void OnGUI() {
+        // FBX selection
+        EditorGUILayout.LabelField("Source FBX:", EditorStyles.label);
         selectedFBX = (GameObject)EditorGUILayout.ObjectField(selectedFBX, typeof(GameObject), false);
 
         EditorGUILayout.Space();
 
-        // Chemin d'export
-        EditorGUILayout.LabelField("Dossier d'export:", EditorStyles.label);
+        // Export path
+        EditorGUILayout.LabelField("Export folder:", EditorStyles.label);
         EditorGUILayout.BeginHorizontal();
         exportPath = EditorGUILayout.TextField(exportPath);
-        if (GUILayout.Button("Parcourir", GUILayout.Width(80)))
+        if (GUILayout.Button("Browse", GUILayout.Width(80)))
         {
-            string newPath = EditorUtility.OpenFolderPanel("Sélectionner le dossier d'export", "Assets", "");
+            string newPath = EditorUtility.OpenFolderPanel("Select export folder", "Assets", "");
             if (!string.IsNullOrEmpty(newPath))
             {
-                exportPath = "Assets" + newPath.Substring(Application.dataPath.Length) + "/";
+                exportPath = "Assets" + newPath[Application.dataPath.Length..] + "/";
             }
         }
         EditorGUILayout.EndHorizontal();
@@ -49,60 +67,60 @@ public class FBXAnimationExporter : EditorWindow
         EditorGUILayout.Space();
 
         // Options
-        EditorGUILayout.LabelField("Options d'export:", EditorStyles.label);
-        createSeparateFiles = EditorGUILayout.Toggle("Créer des fichiers séparés", createSeparateFiles);
-        includeRootMotion = EditorGUILayout.Toggle("Inclure Root Motion", includeRootMotion);
+        EditorGUILayout.LabelField("Export options:", EditorStyles.label);
+        createSeparateFiles = EditorGUILayout.Toggle("Create separate files", createSeparateFiles);
+        includeRootMotion = EditorGUILayout.Toggle("Include Root Motion", includeRootMotion);
 
         EditorGUILayout.Space();
 
-        // Affichage des clips trouvés
-        if (selectedFBX != null)
-        {
+        // Found clips
+        if (selectedFBX != null) {
             UpdateAnimationClipsList();
             
-            if (animationClips.Count > 0)
-            {
-                EditorGUILayout.LabelField($"Clips d'animation trouvés ({animationClips.Count}):", EditorStyles.label);
+            if (animationClips.Count > 0) {
+                EditorGUILayout.LabelField($"Animation clips found ({animationClips.Count}):", EditorStyles.label);
                 
                 scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Height(150));
-                foreach (var clip in animationClips)
-                {
+                foreach (var clip in animationClips) {
+                    string sanitized = SanitizeFileName(clip.name);
+
+                    EditorGUILayout.BeginVertical();
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.LabelField(clip.name);
                     EditorGUILayout.LabelField($"{clip.length:F2}s", GUILayout.Width(50));
                     EditorGUILayout.EndHorizontal();
+
+                    // Preview the renamed (sanitized) export file, muted, when it differs.
+                    if (sanitized != clip.name)
+                        EditorGUILayout.LabelField($"\u2192 {sanitized}.anim", MutedLabel);
+
+                    EditorGUILayout.EndVertical();
                 }
                 EditorGUILayout.EndScrollView();
             }
             else
             {
-                EditorGUILayout.HelpBox("Aucun clip d'animation trouvé dans ce FBX.", MessageType.Info);
+                EditorGUILayout.HelpBox("No animation clip found in this FBX.", MessageType.Info);
             }
         }
 
         EditorGUILayout.Space();
 
-        // Boutons d'action
+        // Action buttons
         EditorGUI.BeginDisabledGroup(selectedFBX == null || animationClips.Count == 0);
         
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("Exporter toutes les animations"))
-        {
+        if (GUILayout.Button("Export all animations"))
             ExportAllAnimations();
-        }
         
-        if (GUILayout.Button("Exporter la sélection"))
-        {
+        if (GUILayout.Button("Export selection"))
             ExportSelectedAnimations();
-        }
         EditorGUILayout.EndHorizontal();
         
         EditorGUI.EndDisabledGroup();
 
         if (selectedFBX == null)
-        {
-            EditorGUILayout.HelpBox("Veuillez sélectionner un fichier FBX contenant des animations.", MessageType.Warning);
-        }
+            EditorGUILayout.HelpBox("Please select an FBX file containing animations.", MessageType.Warning);
     }
 
     private void UpdateAnimationClipsList()
@@ -112,37 +130,33 @@ public class FBXAnimationExporter : EditorWindow
         if (selectedFBX == null) return;
 
         string assetPath = AssetDatabase.GetAssetPath(selectedFBX);
-        Object[] objects = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+        UnityEngine.Object[] objects = AssetDatabase.LoadAllAssetsAtPath(assetPath);
         
-        foreach (Object obj in objects)
-        {
+        foreach (UnityEngine.Object obj in objects)
             if (obj is AnimationClip clip && !clip.name.StartsWith("__preview__"))
-            {
                 animationClips.Add(clip);
-            }
-        }
     }
 
     private void ExportAllAnimations()
     {
         if (!Directory.Exists(exportPath))
-        {
             Directory.CreateDirectory(exportPath);
-        }
+
+        usedFileNames.Clear();
 
         int exportedCount = 0;
         
         try
         {
-            EditorUtility.DisplayProgressBar("Export des animations", "Préparation...", 0f);
+            EditorUtility.DisplayProgressBar("Exporting animations", "Preparing...", 0f);
             
             for (int i = 0; i < animationClips.Count; i++)
             {
                 AnimationClip sourceClip = animationClips[i];
                 float progress = (float)i / animationClips.Count;
                 
-                EditorUtility.DisplayProgressBar("Export des animations", 
-                    $"Export de {sourceClip.name}...", progress);
+                EditorUtility.DisplayProgressBar("Exporting animations", 
+                    $"Exporting {sourceClip.name}...", progress);
                 
                 if (ExportAnimationClip(sourceClip))
                 {
@@ -157,77 +171,94 @@ public class FBXAnimationExporter : EditorWindow
 
         AssetDatabase.Refresh();
         
-        string message = $"Export terminé ! {exportedCount}/{animationClips.Count} animations exportées.";
-        EditorUtility.DisplayDialog("Export terminé", message, "OK");
+        string message = $"Export complete! {exportedCount}/{animationClips.Count} animations exported.";
+        EditorUtility.DisplayDialog("Export complete", message, "OK");
         
-        Debug.Log($"[FBX Animation Exporter] {message}");
+        Logger.Log(message, this, tag: nameof(FBXAnimationExporter));
     }
 
     private void ExportSelectedAnimations()
     {
-        // Pour cette version simple, on exporte toutes les animations
-        // Dans une version plus avancée, on pourrait ajouter une sélection par checkboxes
+        // Simple version: export every animation.
+        // A future version could add per-clip checkboxes.
         ExportAllAnimations();
     }
 
-    private bool ExportAnimationClip(AnimationClip sourceClip)
-    {
-        try
-        {
-            // Créer une copie du clip d'animation
+    private bool ExportAnimationClip(AnimationClip sourceClip) {
+        try {
+            // Duplicate the animation clip
             var newClip = Instantiate(sourceClip);
-            newClip.name = sourceClip.name;
 
-            // Appliquer les options
-            if (!includeRootMotion)
-            {
-                // Supprimer les courbes de root motion si nécessaire
+            // Apply options
+            if (!includeRootMotion) {
+                // Strip root motion curves when requested
                 var bindings = AnimationUtility.GetCurveBindings(newClip);
                 foreach (var binding in bindings)
-                {
-                    if (binding.path == "" && (binding.propertyName.Contains("RootT") || binding.propertyName.Contains("RootQ")))
-                    {
-                        AnimationCurve emptyCurve = new AnimationCurve();
+                    if (binding.path == "" && (binding.propertyName.Contains("RootT") || binding.propertyName.Contains("RootQ"))) {
+                        AnimationCurve emptyCurve = new();
                         AnimationUtility.SetEditorCurve(newClip, binding, emptyCurve);
                     }
-                }
             }
 
-            // Générer le nom de fichier
-            string fileName = createSeparateFiles ? 
-                $"{sourceClip.name}.anim" : 
-                $"{selectedFBX.name}_animations.anim";
-                
+            // Build a valid file name: FBX clips often contain characters that are illegal
+            // in file paths (e.g. "Armature|Idle_Loop" from the Quaternius FBX).
+            string assetName = createSeparateFiles
+                ? MakeUniqueFileName(SanitizeFileName(sourceClip.name))
+                : SanitizeFileName(selectedFBX.name) + "_animations";
+
+            newClip.name = assetName;
+
+            string fileName = $"{assetName}.anim";
             string fullPath = Path.Combine(exportPath, fileName);
             
-            // Créer l'asset
+            // Create the asset
             if (createSeparateFiles || !File.Exists(fullPath))
-            {
                 AssetDatabase.CreateAsset(newClip, fullPath);
-            }
-            else
-            {
-                // Ajouter à un asset existant (mode fichier unique)
-                AssetDatabase.AddObjectToAsset(newClip, fullPath);
-            }
+            else AssetDatabase.AddObjectToAsset(newClip, fullPath);
 
             return true;
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"[FBX Animation Exporter] Erreur lors de l'export de {sourceClip.name}: {e.Message}");
+        } catch (Exception e) {
+            Logger.LogError($"Failed to export {sourceClip.name}: {e.Message}", this, tag: nameof(FBXAnimationExporter));
             return false;
         }
     }
 
-    private void OnSelectionChange()
-    {
-        // Auto-sélection du FBX si un objet FBX est sélectionné dans le projet
-        if (Selection.activeObject != null)
-        {
+    /// <summary>
+    /// Replaces the characters that are illegal in a file name (e.g. the '|' found in
+    /// FBX clip names like "Armature|Idle_Loop") with '_'.
+    /// </summary>
+    private static string SanitizeFileName(string name) {
+        if (string.IsNullOrEmpty(name))
+            return "Unnamed";
+
+        char[] invalid = Path.GetInvalidFileNameChars();
+        var builder = new StringBuilder(name.Length);
+        foreach (char c in name)
+            builder.Append(Array.IndexOf(invalid, c) >= 0 ? '_' : c);
+
+        // On Windows a name cannot end with a dot or a space.
+        string sanitized = builder.ToString().Trim().TrimEnd('.');
+        return string.IsNullOrEmpty(sanitized) ? "Unnamed" : sanitized;
+    }
+
+    /// <summary>Avoids collisions when two clips resolve to the same file name.</summary>
+    private string MakeUniqueFileName(string name)  {
+        if (usedFileNames.Add(name))
+            return name;
+
+        int i = 1;
+        string candidate;
+        do { candidate = $"{name}_{i++}"; } 
+        while (!usedFileNames.Add(candidate));
+
+        return candidate;
+    }
+
+    private void OnSelectionChange() {
+        // Auto-select the FBX when an FBX object is selected in the project
+        if (Selection.activeObject != null) {
             string path = AssetDatabase.GetAssetPath(Selection.activeObject);
-            if (path.EndsWith(".fbx", System.StringComparison.OrdinalIgnoreCase))
-            {
+            if (path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase)) {
                 selectedFBX = Selection.activeObject as GameObject;
                 Repaint();
             }
@@ -235,9 +266,8 @@ public class FBXAnimationExporter : EditorWindow
     }
 }
 
-[System.Serializable]
-public class AnimationExportSettings
-{
+[Serializable]
+public class AnimationExportSettings {
     public bool exportRootMotion = true;
     public bool createSeparateFiles = true;
     public bool optimizeKeyframes = true;
