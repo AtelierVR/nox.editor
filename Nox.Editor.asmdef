@@ -4,6 +4,7 @@
     "references": [
         "UniTask",
         "Nox.CCK",
+        "Nox.CCK.Entities",
         "Nox.ModLoader",
         "Nox.Editor.Panel",
         "Nox.Editor.Panel.Runtime",

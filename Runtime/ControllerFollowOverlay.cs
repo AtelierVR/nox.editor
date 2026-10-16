@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEditor.Overlays;
 using UnityEngine;
 using UnityEngine.UIElements;
-using Nox.CCK.Players;
+using Nox.CCK.Entities;
 using Nox.CCK.Utils;
 using Nox.Controllers;
 using Nox.Controllers.Runtime;
@@ -97,7 +97,7 @@ namespace Nox.Editor
 
             // Base part position (floor level).
             Vector3 basePos;
-            if (controller.TryGetPart(PlayerRig.Base.ToIndex(), out var basePart))
+            if (controller.TryGetPart(EntityRig.Base.ToIndex(), out var basePart))
                 basePos = basePart.GetPosition();
             else if (collider)
                 basePos = collider.transform.position;
