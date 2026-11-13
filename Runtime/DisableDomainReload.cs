@@ -9,7 +9,7 @@ namespace Nox.Editor {
 	/// <para>
 	/// With the reload enabled, every press of Play rebuilds the whole scripting domain and re-imports
 	/// the asset database. Measured on this project it costs 13.8-17.6 s of blocked editor time
-	/// (<c>Asset Pipeline Refresh … Initiated by StopAssetImportingV2(ForceSynchronousImport |
+	/// (<c>Asset Pipeline Refresh ... Initiated by StopAssetImportingV2(ForceSynchronousImport |
 	/// ForceDomainReload)</c>), of which <c>ImportOutOfDateAssets</c> 8.9-11 s with <i>zero</i> changed
 	/// asset files, 4.5-5.8 s of actual domain reload, and 2.5 s re-running the editor-side
 	/// <c>[InitializeOnLoadMethod]</c>s (the mod loader bootstrap). The loader supports Play Mode

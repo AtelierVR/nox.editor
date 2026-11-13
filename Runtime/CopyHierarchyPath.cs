@@ -28,7 +28,7 @@ namespace Nox.Editor {
 
 		// ── Helpers ─────────────────────────────────────────────────────────────
 
-		/// <summary>Returns "SceneName/Root/Child/…/GameObject".</summary>
+		/// <summary>Returns "SceneName/Root/Child/.../GameObject".</summary>
 		private static string BuildPath(GameObject go) {
 			var scene = go.scene;
 			var sceneName = string.IsNullOrEmpty(scene.name)

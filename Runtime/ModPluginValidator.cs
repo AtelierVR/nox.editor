@@ -44,12 +44,12 @@ namespace Nox.Editor {
 	/// (<c>windows</c>, <c>linux</c>, <c>macos</c>, <c>android</c>, <c>ios</c>, <c>visionos</c>) and
 	/// architecture folder names from <c>Architecture.GetArchitectureName()</c>
 	/// (<c>x86</c>, <c>x64</c>, <c>arm</c>, <c>arm64</c>). The legacy flat folders
-	/// (<c>win64</c>, <c>win32</c>, <c>osx</c>, <c>x86_64</c>, …) are reported and can be migrated by
+	/// (<c>win64</c>, <c>win32</c>, <c>osx</c>, <c>x86_64</c>, ...) are reported and can be migrated by
 	/// the "Fix Mod Plugins" menu entry.</para>
 	///
 	/// <para><b>Expected settings</b> — a plugin sitting under a platform folder must be compatible
 	/// with that platform only (and with the Editor when that platform is the host platform), with
-	/// the CPU matching the architecture folder (<c>x86_64</c>, <c>ARM64</c>, …; <c>AnyCPU</c> for
+	/// the CPU matching the architecture folder (<c>x86_64</c>, <c>ARM64</c>, ...; <c>AnyCPU</c> for
 	/// managed binaries). A managed assembly left at the <c>Plugins</c> root must be compatible with
 	/// "Any Platform".</para>
 	///
@@ -151,7 +151,7 @@ namespace Nox.Editor {
 			if (!EditorUtility.DisplayDialog(
 				    "Fix Mod Plugins",
 				    "Apply the expected PluginImporter settings to every mod plugin,\n" +
-				    "and migrate the legacy plugin folders (win64, osx, x86_64, …)\n" +
+				    "and migrate the legacy plugin folders (win64, osx, x86_64, ...)\n" +
 				    "to <platform>/<arch>?",
 				    "Fix", "Cancel"))
 				return;
