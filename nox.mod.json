@@ -24,7 +24,8 @@
       "Nox.Editor.EventLogger",
       "Nox.Editor.TranslationsPanel",
       "Nox.Editor.Performances",
-      "Nox.Editor.ModDetails"
+      "Nox.Editor.ModDetails",
+      "Nox.Editor.ThemePanel"
     ]
   }
 }
