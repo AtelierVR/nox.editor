@@ -109,7 +109,7 @@ namespace Nox.Editor {
 			var foldout = entry.Q<Foldout>("entry-foldout");
 			if (foldout != null) foldout.text = CustomLabel(ctx);
 
-			entry.Q<Label>("source-mod").text     = $"{ctx.Source.GetMetadata().GetId()}@{ctx.Source.GetMetadata().GetVersion()}";
+			entry.Q<Label>("source-mod").text     = $"{ctx.Source.Metadata.Id}@{ctx.Source.Metadata.Version}";
 			entry.Q<Label>("source-channel").text = ctx.SourceChannel.ToString();
 			entry.Q<Label>("data-count").text     = $"Data ({ctx.Data.Length})";
 
@@ -157,23 +157,23 @@ namespace Nox.Editor {
 				"mod_initialize" when ctx.TryGet(0, out IMod mod)
 					&& ctx.TryGet(1, out string entry)
 					&& ctx.TryGet(2, out Enum type)
-					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()} => {type}",
+					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.Metadata.Id}@{mod.Metadata.Version} => {type}",
 				"mod_post_initialize" when ctx.TryGet(0, out IMod mod)
 					&& ctx.TryGet(1, out string entry)
 					&& ctx.TryGet(2, out Enum type)
-					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()} => {type}",
+					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.Metadata.Id}@{mod.Metadata.Version} => {type}",
 				"mod_dispose" when ctx.TryGet(0, out IMod mod)
 					&& ctx.TryGet(1, out string entry)
 					&& ctx.TryGet(2, out Enum type)
-					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()} => {type}",
+					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.Metadata.Id}@{mod.Metadata.Version} => {type}",
 				"mod_pre_dispose" when ctx.TryGet(0, out IMod mod)
 					&& ctx.TryGet(1, out string entry)
 					&& ctx.TryGet(2, out Enum type)
-					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()} => {type}",
+					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.Metadata.Id}@{mod.Metadata.Version} => {type}",
 				"mod_disabled" when ctx.TryGet(0, out IMod mod) && ctx.TryGet(1, out string entry)
-					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()}",
+					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.Metadata.Id}@{mod.Metadata.Version}",
 				"mod_enabled" when ctx.TryGet(0, out IMod mod) && ctx.TryGet(1, out string entry)
-					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.GetMetadata().GetId()}@{mod.GetMetadata().GetVersion()}",
+					=> $"{ctx.EventName} [{entry.ToUpper()}]{mod.Metadata.Id}@{mod.Metadata.Version}",
 				_ => ctx.EventName
 			};
 	}

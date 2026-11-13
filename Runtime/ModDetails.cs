@@ -1,4 +1,4 @@
-ï»¿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -72,11 +72,11 @@ namespace Nox.Editor {
             if (_modsList == null) return;
 
             var mods         = _panel.API.ModAPI.GetMods();
-            var filteredMods = _showDisabled ? mods : mods.Where(m => m.IsLoaded()).ToArray();
+            var filteredMods = _showDisabled ? mods : mods.Where(m => m.IsLoaded).ToArray();
 
             foreach (var mod in filteredMods) {
-                var meta  = mod.GetMetadata();
-                var child = GetModElement(meta.GetId());
+                var meta  = mod.Metadata;
+                var child = GetModElement(meta.Id);
                 if (child != null) {
                     var ud = child.userData as ModUserData;
                     if (ud != null && DateTime.Now - ud.LastModified > TimeSpan.FromSeconds(5)) {
@@ -90,12 +90,12 @@ namespace Nox.Editor {
 
             var toRemove = new List<VisualElement>();
             foreach (var child in _modsList.Children()) {
-                if (child.userData is ModUserData ud && !filteredMods.Any(m => ud.Equals(m.GetMetadata().GetId())))
+                if (child.userData is ModUserData ud && !filteredMods.Any(m => ud.Equals(m.Metadata.Id)))
                     toRemove.Add(child);
             }
             toRemove.ForEach(c => _modsList.Remove(c));
 
-            _modCountLabel.text = $"Mods: {mods.Count(m => m.IsLoaded())}/{mods.Length} enabled";
+            _modCountLabel.text = $"Mods: {mods.Count(m => m.IsLoaded)}/{mods.Length} enabled";
             _lastUpdate         = DateTime.Now;
         }
 
@@ -125,8 +125,8 @@ namespace Nox.Editor {
         private void RefreshModsList() {
             _modsList.Clear();
             var mods         = _panel.API.ModAPI.GetMods();
-            var filteredMods = _showDisabled ? mods : mods.Where(m => m.IsLoaded()).ToArray();
-            _modCountLabel.text = $"Mods: {mods.Count(m => m.IsLoaded())}/{mods.Length} enabled";
+            var filteredMods = _showDisabled ? mods : mods.Where(m => m.IsLoaded).ToArray();
+            _modCountLabel.text = $"Mods: {mods.Count(m => m.IsLoaded)}/{mods.Length} enabled";
             foreach (var mod in filteredMods) AddModItem(mod);
             _lastUpdate = DateTime.Now;
         }
@@ -135,28 +135,28 @@ namespace Nox.Editor {
             => _modsList.Children().FirstOrDefault(c => c.userData is ModUserData ud && ud.Equals(modId));
 
         private void AddModItem(IMod mod) {
-            var meta  = mod.GetMetadata();
-            var child = GetModElement(meta.GetId());
+            var meta  = mod.Metadata;
+            var child = GetModElement(meta.Id);
             if (child != null) { UpdateModItem(child, mod); return; }
 
             child          = _panel.API.AssetAPI.GetAsset<VisualTreeAsset>("mod_item.uxml").CloneTree();
-            child.userData = new ModUserData(meta.GetId());
+            child.userData = new ModUserData(meta.Id);
             UpdateModItem(child, mod);
             _modsList.Add(child);
         }
 
         private void UpdateModItem(VisualElement item, IMod mod) {
-            var meta = mod.GetMetadata();
+            var meta = mod.Metadata;
 
-            item.Q<Label>("mod-id").text      = meta.GetId();
-            item.Q<Label>("mod-version").text = "v" + meta.GetVersion();
-            item.Q<Label>("mod-name").text    = meta.GetName() ?? "";
-            item.Q<Label>("mod-license").text = meta.GetLicense() ?? "";
+            item.Q<Label>("mod-id").text      = meta.Id;
+            item.Q<Label>("mod-version").text = "v" + meta.Version;
+            item.Q<Label>("mod-name").text    = meta.Name ?? "";
+            item.Q<Label>("mod-license").text = meta.License ?? "";
 
             var statusLoaded = item.Q("status-loaded");
             if (statusLoaded != null) {
-                statusLoaded.EnableInClassList("is-loaded",   mod.IsLoaded());
-                statusLoaded.EnableInClassList("is-unloaded", !mod.IsLoaded());
+                statusLoaded.EnableInClassList("is-loaded",   mod.IsLoaded);
+                statusLoaded.EnableInClassList("is-unloaded", !mod.IsLoaded);
             }
 
             SetDotVisible(item, "status-main",   HasEntries(mod, "main"));
@@ -167,9 +167,9 @@ namespace Nox.Editor {
 
             var providesList = item.Q<VisualElement>("provides-list");
             providesList.Clear();
-            foreach (var p in meta.GetProvides()) {
+            foreach (var p in meta.Provides) {
                 var el = _panel.API.AssetAPI.GetAsset<VisualTreeAsset>("provide-item.uxml").CloneTree();
-                el.Q<Label>("provide-text").text = "â€¢ " + p;
+                el.Q<Label>("provide-text").text = "• " + p;
                 providesList.Add(el);
             }
 
@@ -200,7 +200,7 @@ namespace Nox.Editor {
             list.Clear();
             foreach (var e in entries) {
                 var el = _panel.API.AssetAPI.GetAsset<VisualTreeAsset>("entry-item.uxml").CloneTree();
-                el.Q<Label>("entry-text").text = "â€¢ " + e;
+                el.Q<Label>("entry-text").text = "• " + e;
                 list.Add(el);
             }
         }
@@ -213,7 +213,7 @@ namespace Nox.Editor {
 
         private static string[] GetEntries(IMod mod, string section) {
             try {
-                var ep = mod.GetMetadata().GetEntryPoints();
+                var ep = mod.Metadata.EntryPoints;
                 return ep?.Has(section) == true
                     ? ep.Get(section).Select(e => e.FullName).ToArray()
                     : Array.Empty<string>();

@@ -133,7 +133,7 @@ namespace Nox.Editor {
 
 		private void OnModAdded(IMod mod) {
 			if (mod == null || _content == null) return;
-			var modId     = mod.GetMetadata().GetId();
+			var modId     = mod.Metadata.Id;
 			var container = _content.Q<VisualElement>("mods-container");
 			if (container == null) return;
 
@@ -149,7 +149,7 @@ namespace Nox.Editor {
 
 		private void OnModRemoved(IMod mod) {
 			if (mod == null) return;
-			var modId = mod.GetMetadata().GetId();
+			var modId = mod.Metadata.Id;
 			var child = GetModElement(modId);
 			if (child != null) {
 				_content?.Q<VisualElement>("mods-container")?.Remove(child);
@@ -382,8 +382,8 @@ namespace Nox.Editor {
 
 		private void UpdateModInfo() {
 			if (_foldout != null && _mod != null) {
-				var meta = _mod.GetMetadata();
-				_foldout.text = $"{meta.GetName()} ({meta.GetId()})";
+				var meta = _mod.Metadata;
+				_foldout.text = $"{meta.Name} ({meta.Id})";
 			}
 		}
 
@@ -392,7 +392,7 @@ namespace Nox.Editor {
 			
 			_lastUpdate = DateTime.UtcNow;
 			
-			var profilers = _mod.GetProfiler().ToArray();
+			var profilers = _mod.Profiler.ToArray();
 			Array.Sort(profilers, (p1, p2) => string.Compare(p1.GetName(), p2.GetName(), StringComparison.Ordinal));
 			
 			UpdateProfilers(profilers);
