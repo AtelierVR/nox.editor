@@ -119,7 +119,8 @@ namespace Nox.Editor {
 			var controller = (Main.Instance as IControllerAPI)?.Current;
 			if (controller == null) return;
 
-			var collider = controller.GetCollider();
+			var colliders = controller.GetColliders();
+			var collider = colliders.Count > 0 ? colliders[0] : null;
 
 			// Base part position (floor level) and rotation: the up axis of that part is the one the pivot can
 			// follow, instead of the world up.
